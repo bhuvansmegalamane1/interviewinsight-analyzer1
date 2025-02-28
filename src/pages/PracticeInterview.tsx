@@ -100,8 +100,8 @@ const PracticeInterview = () => {
         }
       }, 100);
       
-      // Clean up the interval when component unmounts
-      return () => clearInterval(checkAudioInterval);
+      // Return the media stream, not the cleanup function
+      return mediaStream;
       
     } catch (err) {
       toast({
@@ -125,9 +125,21 @@ const PracticeInterview = () => {
   };
 
   const beginRecording = async () => {
-    const mediaStream = stream || await requestCameraPermission();
+    // If we don't have a stream yet, request it
+    let mediaStream = stream;
+    if (!mediaStream) {
+      mediaStream = await requestCameraPermission();
+    }
     
-    if (!mediaStream) return;
+    // Check if mediaStream is valid (not null)
+    if (!mediaStream) {
+      toast({
+        title: "Camera access failed",
+        description: "Could not access camera and microphone.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setRecordingState("recording");
     setRecordingTime(0);
