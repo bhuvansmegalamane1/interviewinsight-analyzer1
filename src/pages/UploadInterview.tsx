@@ -53,6 +53,17 @@ const UploadInterview = () => {
       return;
     }
     
+    // Store whether the file has speech content
+    // This is a simple simulation - in a real app, you would analyze the audio
+    // Let's randomly determine this for demo purposes
+    const hasSpokenContent = file.size > 1000000; // Arbitrary check
+    
+    sessionStorage.setItem('interviewData', JSON.stringify({
+      timestamp: new Date().toISOString(),
+      hasSpokenContent: hasSpokenContent,
+      fileSize: file.size
+    }));
+    
     setFile(file);
   };
 
@@ -119,13 +130,13 @@ const UploadInterview = () => {
                 <p className="text-neutral-500 dark:text-neutral-400">
                   Drag and drop your video file here, or click to browse
                 </p>
-                <Button
-                  as="label"
-                  htmlFor="file-upload"
-                  variant="outline"
-                  className="cursor-pointer"
-                >
-                  Select Video
+                <label htmlFor="file-upload">
+                  <Button 
+                    variant="outline" 
+                    className="cursor-pointer"
+                  >
+                    Select Video
+                  </Button>
                   <input
                     id="file-upload"
                     type="file"
@@ -133,7 +144,7 @@ const UploadInterview = () => {
                     className="hidden"
                     onChange={handleFileInput}
                   />
-                </Button>
+                </label>
                 <p className="text-xs text-neutral-400">
                   Supported formats: MP4, MOV, AVI, WEBM (max 500MB)
                 </p>

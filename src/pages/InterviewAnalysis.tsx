@@ -9,10 +9,27 @@ import ScoreSection from "@/components/analysis/ScoreSection";
 import FeedbackSection from "@/components/analysis/FeedbackSection";
 import VideoPlayer from "@/components/VideoPlayer";
 import { useFakeAnalysisData } from "@/hooks/useFakeAnalysisData";
+import { useEffect, useState } from "react";
 
 const InterviewAnalysis = () => {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useFakeAnalysisData(id);
+  const [hasContent, setHasContent] = useState(false);
+  const { data, isLoading } = useFakeAnalysisData(id, hasContent);
+  
+  // Simulate content detection from the session storage
+  // In a real app, this would come from actual audio analysis
+  useEffect(() => {
+    const sessionData = sessionStorage.getItem('interviewData');
+    if (sessionData) {
+      try {
+        const parsedData = JSON.parse(sessionData);
+        setHasContent(parsedData.hasSpokenContent || false);
+      } catch (e) {
+        console.error("Error parsing session data:", e);
+        setHasContent(false);
+      }
+    }
+  }, [id]);
   
   if (isLoading) {
     return (

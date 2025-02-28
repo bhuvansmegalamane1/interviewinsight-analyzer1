@@ -21,10 +21,15 @@ const PracticeInterview = () => {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [speechDetected, setSpeechDetected] = useState(false);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<number | null>(null);
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -41,8 +46,11 @@ const PracticeInterview = () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (audioContext) {
+        audioContext.close();
+      }
     };
-  }, [stream]);
+  }, [stream, audioContext]);
 
   const requestCameraPermission = async () => {
     try {
@@ -57,7 +65,44 @@ const PracticeInterview = () => {
         videoRef.current.srcObject = mediaStream;
       }
       
-      return mediaStream;
+      // Setup audio analysis
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      setAudioContext(audioCtx);
+      
+      const analyser = audioCtx.createAnalyser();
+      audioAnalyserRef.current = analyser;
+      analyser.fftSize = 256;
+      
+      const audioSource = audioCtx.createMediaStreamSource(mediaStream);
+      audioSource.connect(analyser);
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      dataArrayRef.current = dataArray;
+      
+      // Start audio level monitoring
+      const checkAudioInterval = setInterval(() => {
+        if (recordingState === "recording" && analyser && dataArray) {
+          analyser.getByteFrequencyData(dataArray);
+          
+          // Calculate audio level (basic average of frequency values)
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const avg = sum / dataArray.length;
+          setAudioLevel(avg);
+          
+          // If average is above threshold, consider speech detected
+          if (avg > 15) { // Adjust this threshold based on testing
+            setSpeechDetected(true);
+          }
+        }
+      }, 100);
+      
+      // Clean up the interval when component unmounts
+      return () => clearInterval(checkAudioInterval);
+      
     } catch (err) {
       toast({
         title: "Camera access denied",
@@ -71,6 +116,7 @@ const PracticeInterview = () => {
   const startRecording = async () => {
     setRecordingState("countdown");
     setIsCountingDown(true);
+    setSpeechDetected(false);
     
     setTimeout(() => {
       setIsCountingDown(false);
@@ -99,6 +145,13 @@ const PracticeInterview = () => {
     mediaRecorder.onstop = () => {
       setRecordedChunks(chunks);
       setRecordingState("processing");
+      
+      // Store speech detection result in session storage for analysis page
+      sessionStorage.setItem('interviewData', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        hasSpokenContent: speechDetected,
+        recordingDuration: recordingTime
+      }));
       
       setTimeout(() => {
         processRecording();
@@ -175,10 +228,27 @@ const PracticeInterview = () => {
               </div>
               
               {recordingState === "recording" && (
-                <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm">
-                  <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
-                  <span>Recording {formatTime(recordingTime)}</span>
-                </div>
+                <>
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm">
+                    <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                    <span>Recording {formatTime(recordingTime)}</span>
+                  </div>
+                  
+                  {/* Audio level indicator */}
+                  <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                    <div className="flex gap-1 items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={i}
+                          className={`h-3 w-1 rounded-full ${
+                            audioLevel > i * 10 ? 'bg-green-500' : 'bg-gray-500'
+                          }`}
+                        ></div>
+                      ))}
+                    </div>
+                    <span>{speechDetected ? 'Voice detected' : 'Silence'}</span>
+                  </div>
+                </>
               )}
               
               {recordingState === "processing" && (
