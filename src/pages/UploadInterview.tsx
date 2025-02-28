@@ -130,13 +130,7 @@ const UploadInterview = () => {
                 <p className="text-neutral-500 dark:text-neutral-400">
                   Drag and drop your video file here, or click to browse
                 </p>
-                <label htmlFor="file-upload">
-                  <Button 
-                    variant="outline" 
-                    className="cursor-pointer"
-                  >
-                    Select Video
-                  </Button>
+                <div>
                   <input
                     id="file-upload"
                     type="file"
@@ -144,7 +138,14 @@ const UploadInterview = () => {
                     className="hidden"
                     onChange={handleFileInput}
                   />
-                </label>
+                  <Button 
+                    variant="outline" 
+                    className="cursor-pointer"
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                  >
+                    Select Video
+                  </Button>
+                </div>
                 <p className="text-xs text-neutral-400">
                   Supported formats: MP4, MOV, AVI, WEBM (max 500MB)
                 </p>
