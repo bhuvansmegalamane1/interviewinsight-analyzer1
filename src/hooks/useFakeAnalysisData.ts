@@ -9,66 +9,211 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
   useEffect(() => {
     // Simulate API call delay
     const timer = setTimeout(() => {
+      // Get additional data from sessionStorage if available
+      let sessionData = null;
+      try {
+        const storedData = sessionStorage.getItem('interviewData');
+        if (storedData) {
+          sessionData = JSON.parse(storedData);
+        }
+      } catch (e) {
+        console.error("Error parsing session data:", e);
+      }
+      
+      // Determine recording duration - influences feedback on conciseness
+      const recordingDuration = sessionData?.recordingDuration || 0;
+      const isShortAnswer = recordingDuration < 30; // Less than 30 seconds is considered short
+      const isLongAnswer = recordingDuration > 120; // More than 2 minutes is considered long
+      
       if (hasContent) {
-        // Good score for videos with content
+        // Good to moderate score for videos with content
+        // The more realistic implementation would analyze the actual content quality
+        
+        // Calculate scores based on detection metrics
+        const eyeContactScore = Math.floor(Math.random() * 30) + 60; // 60-90 score range
+        const postureScore = Math.floor(Math.random() * 25) + 65; // 65-90 score range
+        const verbalScore = Math.floor(Math.random() * 30) + 60; // 60-90 score range
+        const contentScore = isShortAnswer ? (Math.floor(Math.random() * 20) + 50) : // 50-70 for short answers 
+                            isLongAnswer ? (Math.floor(Math.random() * 20) + 60) : // 60-80 for long answers
+                            (Math.floor(Math.random() * 25) + 70); // 70-95 for ideal length answers
+        const engagementScore = Math.floor(Math.random() * 25) + 65; // 65-90 score range
+        
+        // Calculate detailed scores
+        const clarityScore = Math.floor(Math.random() * 20) + 70; // 70-90
+        const concisenessScore = isShortAnswer ? 60 : (isLongAnswer ? 65 : 85); // Penalize very short or long answers
+        const relevanceScore = Math.floor(Math.random() * 15) + 75; // 75-90
+        const confidenceScore = Math.floor(Math.random() * 30) + 65; // 65-95
+        
+        // Calculate overall score (weighted average)
+        const overallScore = Math.floor(
+          (verbalScore * 0.3) + 
+          (postureScore * 0.2) + 
+          (contentScore * 0.3) + 
+          (engagementScore * 0.2)
+        );
+        
+        // Determine feedback based on scores
+        const verbalFeedback = {
+          clarity: verbalScore > 80 ? 
+            "Your speech was clear and articulate. You spoke at an appropriate pace and enunciated well, making it easy for listeners to understand you." :
+            verbalScore > 65 ? 
+            "Your speech was generally clear, though there were a few moments where you spoke too quickly or mumbled slightly. Focus on maintaining consistent clarity throughout." :
+            "Your speech clarity needs improvement. You frequently spoke too quickly or mumbled, making it difficult to understand some of your points. Practice speaking more deliberately and enunciating each word.",
+          
+          vocabulary: contentScore > 80 ? 
+            "You demonstrated a strong, professional vocabulary and effectively used industry terminology where appropriate. Your language was precise and effective." :
+            contentScore > 65 ? 
+            "Your vocabulary was adequate, though occasionally repetitive. Consider expanding your professional terminology and varying your word choice for more impact." :
+            "Your vocabulary was limited and repetitive. Work on expanding your professional vocabulary and using more varied language to express your ideas more effectively.",
+          
+          fillerWords: verbalScore > 75 ? 
+            "You used minimal filler words ('um', 'uh', 'like', etc.), which contributed to your professional delivery. Continue to be mindful of these in future interviews." :
+            verbalScore > 60 ? 
+            "You occasionally used filler words ('um', 'uh', 'like', etc.) – about 10-15 instances throughout. Being more conscious of these would enhance your verbal delivery." :
+            "You frequently used filler words ('um', 'uh', 'like', etc.) – over 20 instances throughout the interview. This significantly impacted your professional delivery. Practice pausing instead of using fillers."
+        };
+        
+        const nonVerbalFeedback = {
+          eyeContact: eyeContactScore > 80 ? 
+            "You maintained excellent eye contact with the camera throughout the interview, which conveyed confidence and engagement. This is a strong point in your interview technique." :
+            eyeContactScore > 65 ? 
+            "Your eye contact was generally good, though inconsistent at times, particularly when discussing more challenging topics. Work on maintaining steady eye contact even when under pressure." :
+            "Your eye contact was minimal or inconsistent throughout the interview. This can give the impression of nervousness or lack of confidence. Practice looking directly at the camera more consistently.",
+          
+          facialExpressions: engagementScore > 80 ? 
+            "Your facial expressions were animated and appropriate, showing engagement and enthusiasm throughout the interview. You effectively conveyed interest in the conversation." :
+            engagementScore > 65 ? 
+            "Your facial expressions were appropriate but somewhat limited in range. Incorporating more expressive responses would better demonstrate your engagement and enthusiasm." :
+            "Your facial expressions were minimal or flat throughout the interview. This can make it difficult for interviewers to gauge your interest or enthusiasm. Practice incorporating more expressive responses.",
+          
+          posture: postureScore > 80 ? 
+            "Your posture was excellent – upright, attentive, and professional throughout. This non-verbal cue significantly enhanced your professional presence." :
+            postureScore > 65 ? 
+            "Your posture was generally good but occasionally showed signs of tension or slouching. Maintaining consistent, relaxed but upright posture would enhance your presence." :
+            "Your posture needs improvement as you frequently slouched or appeared tense. This can diminish your professional presence. Practice sitting upright while keeping your shoulders relaxed."
+        };
+        
+        const contentFeedback = {
+          relevance: relevanceScore > 85 ? 
+            "Your answers were highly relevant and directly addressed the questions asked. You demonstrated excellent understanding of what was being asked and provided appropriately targeted responses." :
+            relevanceScore > 70 ? 
+            "Your answers were generally relevant, though occasionally you veered off-topic or included unnecessary information. Focus on keeping responses more closely aligned with the specific questions." :
+            "Many of your answers lacked relevance to the questions asked. You frequently went off-topic or failed to address key aspects of the questions. Practice providing more focused responses.",
+          
+          structure: contentScore > 80 ? 
+            "Your answers followed a clear, logical structure. You effectively used frameworks like STAR for behavioral questions and presented information in a well-organized manner." :
+            contentScore > 65 ? 
+            "Your answers had some structure, but organization could be improved. Some responses lacked clear beginnings, middles, and conclusions. Consider using the STAR method more consistently." :
+            "Your answers lacked clear structure or organization. Information was often presented in a confusing order. Practice organizing your thoughts into introduction, main points, and conclusion.",
+          
+          examples: contentScore > 85 ? 
+            "You provided excellent, specific examples from your experience that effectively illustrated your points. The examples were relevant and demonstrated your capabilities well." :
+            contentScore > 70 ? 
+            "You included some good examples, though they could have been more specific or detailed at times. More concrete illustrations of your accomplishments would strengthen your responses." :
+            "Your answers lacked specific examples or the examples provided were too vague. Including detailed, relevant examples from your experience would significantly improve your responses."
+        };
+        
+        const overallFeedback = {
+          confidence: confidenceScore > 85 ? 
+            "You projected strong confidence throughout the interview. Your tone, pace, and body language all contributed to a self-assured presence that would impress interviewers." :
+            confidenceScore > 70 ? 
+            "You appeared reasonably confident, though there were moments of hesitation or uncertainty, particularly when addressing challenging questions. Work on maintaining consistent confidence." :
+            "You appeared nervous or lacking in confidence during much of the interview. This was evident in your hesitant tone, uncertain language, and tense body language. Practice techniques to project more confidence.",
+          
+          engagement: engagementScore > 85 ? 
+            "You demonstrated excellent engagement throughout the interview. Your energy level, responsiveness, and interest in the conversation were consistently strong." :
+            engagementScore > 70 ? 
+            "Your level of engagement was good but somewhat inconsistent. Your energy fluctuated at times, with stronger engagement at the beginning than later in the interview. Aim for more consistent energy throughout." :
+            "Your engagement level appeared low throughout much of the interview. More animation, enthusiasm, and energy would significantly improve the impression you make on interviewers.",
+          
+          appearance: postureScore > 80 ? 
+            "Your professional appearance was excellent. You were well-groomed, appropriately dressed, and positioned well on camera with good lighting and framing." :
+            postureScore > 65 ? 
+            "Your appearance was generally professional, though there were some aspects that could be improved, such as better lighting, camera positioning, or more formal attire." :
+            "Your appearance needs improvement for professional interviews. Focus on better grooming, more appropriate attire, improved lighting, and better camera positioning."
+        };
+        
+        // Identify strengths based on highest scores
+        const strengths = [];
+        if (verbalScore >= 75) strengths.push("Clear and articulate communication");
+        if (contentScore >= 80) strengths.push("Well-structured answers with relevant content");
+        if (eyeContactScore >= 80) strengths.push("Strong eye contact and engagement");
+        if (clarityScore >= 85) strengths.push("Excellent clarity in expressing complex ideas");
+        if (concisenessScore >= 80) strengths.push("Concise and to-the-point responses");
+        if (confidenceScore >= 85) strengths.push("Confident and self-assured presentation");
+        if (relevanceScore >= 85) strengths.push("Highly relevant responses that directly address questions");
+        // Ensure we have at least 2 strengths
+        if (strengths.length < 2) {
+          strengths.push("Willingness to engage with challenging questions");
+          strengths.push("Potential for improvement with continued practice");
+        }
+        
+        // Identify areas for improvement based on lowest scores
+        const improvements = [];
+        if (verbalScore < 70) improvements.push("Reduce filler words and improve verbal clarity");
+        if (eyeContactScore < 70) improvements.push("Maintain more consistent eye contact");
+        if (postureScore < 70) improvements.push("Improve posture and body language");
+        if (contentScore < 70) improvements.push("Provide more structured and relevant responses");
+        if (engagementScore < 70) improvements.push("Show more enthusiasm and energy during responses");
+        if (concisenessScore < 70) improvements.push(isShortAnswer ? "Provide more detailed and complete answers" : "Make responses more concise and focused");
+        if (confidenceScore < 70) improvements.push("Project more confidence in your tone and delivery");
+        // Ensure we have at least 2 improvements
+        if (improvements.length < 2) {
+          if (concisenessScore < 90) improvements.push(isShortAnswer ? "Elaborate more on your examples" : "Be slightly more concise in your responses");
+          improvements.push("Further refine your professional vocabulary");
+        }
+        
+        // Generate tailored recommendations
+        const recommendations = [];
+        if (verbalScore < 75) recommendations.push("Practice speaking slowly and clearly, recording yourself to identify areas for improvement");
+        if (eyeContactScore < 75) recommendations.push("Practice maintaining eye contact by placing a sticker near your camera as a reminder");
+        if (contentScore < 75) recommendations.push("Use the STAR method (Situation, Task, Action, Result) to structure your answers");
+        if (engagementScore < 75) recommendations.push("Practice showing more enthusiasm by slightly increasing your energy level beyond what feels natural");
+        if (confidenceScore < 75) recommendations.push("Practice power posing for 2 minutes before interviews to boost confidence");
+        if (verbalScore < 80) recommendations.push("Record practice interviews and count your filler words to become more aware of them");
+        // Ensure we have at least 3 recommendations
+        if (recommendations.length < 3) {
+          recommendations.push("Prepare 5-7 concrete examples of your achievements that can be adapted to different questions");
+          recommendations.push("Ask a friend to conduct mock interviews and provide feedback on your non-verbal communication");
+          recommendations.push("Research common interview questions in your field and practice concise, structured responses");
+        }
+        
+        // Set the analysis data with calculated scores and feedback
         setData({
           id: id || "123456",
           videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-young-female-vlogger-recording-her-podcast-42665-large.mp4",
-          overallScore: 78,
+          overallScore,
           scores: {
-            verbal: 82,
-            nonVerbal: 76,
-            content: 85,
-            engagement: 70
+            verbal: verbalScore,
+            nonVerbal: Math.floor((eyeContactScore + postureScore) / 2), // Average of eye contact and posture
+            content: contentScore,
+            engagement: engagementScore
           },
           detailedScores: {
-            clarity: 84,
-            conciseness: 79,
-            eyeContact: 72,
-            posture: 76,
-            relevance: 88,
-            confidence: 74
+            clarity: clarityScore,
+            conciseness: concisenessScore,
+            eyeContact: eyeContactScore,
+            posture: postureScore,
+            relevance: relevanceScore,
+            confidence: confidenceScore
           },
-          summary: "Overall, your interview performance showed strong communication skills and relevant content. Your answers were well-structured and demonstrated good preparation. There's room for improvement in non-verbal cues and maintaining consistent energy throughout the interview.",
-          strengths: [
-            "Clear and articulate communication",
-            "Well-structured answers with relevant examples",
-            "Good technical knowledge demonstration",
-            "Effective use of industry terminology"
-          ],
-          improvements: [
-            "Inconsistent eye contact throughout interview",
-            "Occasional use of filler words",
-            "Some answers could be more concise",
-            "Body posture appeared tense at times"
-          ],
-          recommendations: [
-            "Practice maintaining consistent eye contact",
-            "Work on eliminating filler words",
-            "Prepare more concise versions of key answers",
-            "Practice more relaxed body language"
-          ],
+          summary: `Your interview performance earned an overall score of ${overallScore}/100. ${
+            overallScore >= 80 ? "You demonstrated strong communication skills and professional presence." :
+            overallScore >= 70 ? "You showed good potential with several strengths, though there are areas for improvement." :
+            "Your interview revealed several opportunities for improvement that would significantly enhance your performance."
+          } ${
+            verbalScore > contentScore ? "Your verbal communication was particularly strong, while your content could be more developed." :
+            contentScore > verbalScore ? "The content of your answers was your strong point, while verbal delivery could be improved." :
+            "You maintained a balance between verbal delivery and content quality."
+          } With targeted practice on the recommended areas, you can further improve your interview performance.`,
+          strengths,
+          improvements,
+          recommendations,
           feedback: {
-            verbal: {
-              clarity: "Your speech was generally clear and easy to understand. You articulated thoughts well, though there were a few moments where you spoke too quickly when discussing technical concepts.",
-              vocabulary: "You demonstrated appropriate professional vocabulary and effectively used industry terminology. Consider varying your word choice slightly more to avoid repetition.",
-              fillerWords: "There was occasional use of filler words like 'um' and 'you know' - about 7 instances throughout the interview. This is an area where minor improvement would enhance your verbal delivery."
-            },
-            nonVerbal: {
-              eyeContact: "Your eye contact was inconsistent throughout the interview. While you maintained good eye contact during the initial questions, it decreased when discussing more challenging topics. Try to maintain consistent eye contact to convey confidence.",
-              facialExpressions: "Your facial expressions were generally appropriate and showed engagement. There were good moments of smiling when introducing yourself, though you could incorporate more varied expressions to enhance your points.",
-              posture: "Your posture appeared somewhat tense, particularly in the shoulders. Try to maintain a more relaxed but upright posture to convey confidence without appearing rigid."
-            },
-            content: {
-              relevance: "Your answers were highly relevant to the questions asked. You demonstrated good understanding of what was being asked and provided appropriate responses that addressed the core of each question.",
-              structure: "Most answers followed a clear structure with introduction, main points, and conclusion. Your STAR method usage for behavioral questions was particularly effective, though some technical explanations could benefit from a more organized approach.",
-              examples: "You provided strong, relevant examples from your experience. The specificity of your project examples was particularly effective. Consider preparing more varied examples to avoid repeating the same professional scenarios."
-            },
-            overall: {
-              confidence: "You projected confidence through most of the interview, particularly when discussing your core expertise. There were moments of hesitation when addressing questions about challenges or weaknesses - this is an area for improvement.",
-              engagement: "Your level of engagement was good but somewhat inconsistent. You showed strong energy at the beginning and end of the interview, with a noticeable dip in the middle section. Aim for more consistent energy throughout.",
-              appearance: "Your professional appearance was appropriate for the interview context. Camera framing and lighting were well set up, creating a clear and professional visual impression."
-            }
+            verbal: verbalFeedback,
+            nonVerbal: nonVerbalFeedback,
+            content: contentFeedback,
+            overall: overallFeedback
           }
         });
       } else {
@@ -91,43 +236,44 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
             relevance: 5,
             confidence: 22
           },
-          summary: "Your interview showed very little verbal communication. We didn't detect sufficient speech to analyze properly. Either you didn't speak enough during the interview or there might have been technical issues with the audio recording.",
+          summary: "Our analysis detected minimal or no speech during your interview. This could be due to technical issues with your microphone, extreme nervousness affecting your ability to speak, or not engaging with the interview questions. An interview requires active verbal participation to be effective.",
           strengths: [
-            "Camera position was adequate",
-            "Appropriate framing in the video",
+            "You were present on camera",
+            "Your visual setup was adequate",
           ],
           improvements: [
-            "No speech detected or extremely limited verbal communication",
-            "No content to evaluate for relevance",
-            "No demonstration of communication skills",
-            "No engagement with the questions"
+            "No meaningful speech detected for analysis",
+            "Verbal participation is essential in interviews",
+            "Responses to questions were insufficient or absent",
+            "Engagement level appeared extremely low"
           ],
           recommendations: [
             "Ensure your microphone is properly connected and functioning",
-            "Speak clearly and at an appropriate volume",
-            "Respond to each question with complete thoughts",
-            "Practice speaking for appropriate durations in interviews"
+            "Practice speaking aloud, even to yourself, to overcome extreme nervousness",
+            "Prepare responses to common interview questions in advance",
+            "Consider recording practice sessions to build confidence",
+            "Remember that interviewers need to hear your thoughts and experiences to evaluate you"
           ],
           feedback: {
             verbal: {
-              clarity: "We couldn't properly assess your speech clarity as there was insufficient speaking detected during the interview. Please ensure you're speaking clearly and that your microphone is functioning correctly.",
-              vocabulary: "Unable to evaluate vocabulary usage due to limited or no speech detected during the interview session.",
-              fillerWords: "No significant speech patterns could be detected to analyze for filler words or other verbal habits."
+              clarity: "We couldn't properly assess your speech clarity as there was insufficient speaking detected during the interview. For interviews to be effective, you must speak clearly and audibly.",
+              vocabulary: "No substantial verbal content was detected to evaluate your vocabulary usage or language skills. Remember that demonstrating your communication abilities is crucial in interviews.",
+              fillerWords: "With minimal speech detected, we couldn't analyze for filler words or other verbal patterns. In interviews, even with nervousness, it's important to verbalize your thoughts."
             },
             nonVerbal: {
-              eyeContact: "While physical presence was detected on camera, the lack of verbal engagement made it difficult to assess if eye contact was appropriately timed with responses.",
-              facialExpressions: "Limited facial expressions were observed, but without corresponding verbal content, it's difficult to assess if they were appropriate for the context.",
-              posture: "Your posture was relatively neutral, but more animated and engaged body language would improve your presence in future interviews."
+              eyeContact: "While you were visible on camera, the lack of verbal engagement made it impossible to assess if eye contact was appropriate. Eye contact normally should be coordinated with your verbal responses.",
+              facialExpressions: "Your facial expressions were limited or neutral, which combined with minimal verbal communication, created an impression of disengagement. Expressive faces help convey enthusiasm and interest.",
+              posture: "Your posture appeared somewhat tense or rigid, which can be interpreted as extreme nervousness. In interview settings, a balance of upright but relaxed posture helps convey confidence."
             },
             content: {
-              relevance: "No content analysis could be performed due to insufficient verbal responses to the interview questions.",
-              structure: "Unable to evaluate response structure due to limited or no detected responses to the interview questions.",
-              examples: "No examples or specific instances were provided that could be evaluated for relevance or effectiveness."
+              relevance: "With insufficient verbal responses, we couldn't evaluate the relevance of your answers. Interviews require substantive responses to questions to assess your qualifications.",
+              structure: "No response structure could be analyzed due to minimal verbal content. Structured answers with clear beginnings, middles, and conclusions are essential in interviews.",
+              examples: "We couldn't identify any specific examples or illustrations in your responses. Concrete examples from your experience are crucial for demonstrating your capabilities to interviewers."
             },
             overall: {
-              confidence: "The lack of verbal communication significantly impacted the perception of confidence. Remember that confidence is primarily conveyed through clear, deliberate speaking.",
-              engagement: "Your level of engagement appeared very low due to minimal verbal participation. Active engagement requires responding to questions thoroughly.",
-              appearance: "While your appearance was professional, the lack of verbal communication overshadowed other aspects of your presentation."
+              confidence: "Your overall confidence level appeared very low, as evidenced by minimal verbal participation. Remember that some nervousness is normal, but you must still communicate effectively.",
+              engagement: "Your engagement level was insufficient for an effective interview. Active participation, even when nervous, is necessary to create a connection with interviewers.",
+              appearance: "While your visual appearance was acceptable, the lack of verbal engagement overshadowed other aspects of your presentation. Interviews require both professional appearance and active communication."
             }
           }
         });
