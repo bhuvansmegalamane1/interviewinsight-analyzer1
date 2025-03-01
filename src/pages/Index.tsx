@@ -8,9 +8,9 @@ import { ArrowRight, Video, BarChart3, Award } from "lucide-react";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="py-8 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm">
-        <div className="container mx-auto">
+    <div className="min-h-screen flex flex-col w-full">
+      <header className="py-8 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm w-full">
+        <div className="container mx-auto w-full max-w-full px-4 md:px-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">InterviewInsight</h1>
         </div>
       </header>
@@ -19,11 +19,11 @@ const Index = () => {
         variants={staggerContainer}
         initial="hidden"
         animate="show"
-        className="flex-1 container mx-auto py-12 px-4 md:px-8 flex flex-col items-center justify-center"
+        className="flex-1 w-full py-12 px-4 md:px-8 flex flex-col items-center justify-center"
       >
         <motion.div 
           variants={fadeIn("up", 0.3)}
-          className="text-center max-w-3xl mx-auto mb-16"
+          className="text-center max-w-3xl mx-auto mb-16 w-full"
         >
           <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-full text-sm font-medium text-blue-800 dark:text-blue-300 mb-4">
             AI-Powered Interview Analysis
@@ -53,7 +53,7 @@ const Index = () => {
         
         <motion.div 
           variants={fadeIn("up", 0.5)}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mx-auto"
         >
           <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800 glow-effect hover:border-blue-200 dark:hover:border-blue-800 overflow-hidden">
             <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4 text-white shadow-md float-animation">
@@ -87,8 +87,8 @@ const Index = () => {
         </motion.div>
       </motion.main>
       
-      <footer className="py-6 px-4 md:px-8 border-t border-neutral-100/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm">
-        <div className="container mx-auto text-center text-sm text-neutral-500">
+      <footer className="py-6 px-4 md:px-8 border-t border-neutral-100/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm w-full">
+        <div className="container mx-auto text-center text-sm text-neutral-500 w-full max-w-full">
           © {new Date().getFullYear()} InterviewInsight. All rights reserved.
         </div>
       </footer>

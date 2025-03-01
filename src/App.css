@@ -1,7 +1,7 @@
-
 /* Removing restrictive max-width to allow better desktop fitting */
 #root {
   margin: 0 auto;
+  /* Removing max-width to allow full screen width */
 }
 
 .logo {

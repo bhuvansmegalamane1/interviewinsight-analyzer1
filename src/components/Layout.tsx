@@ -10,12 +10,12 @@ interface LayoutProps {
 
 const Layout = ({ children, title }: LayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative w-full">
       {/* Subtle background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-overlay z-0"></div>
       
-      <header className="py-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm relative z-10 shadow-sm">
-        <div className="container mx-auto max-w-7xl flex justify-between items-center">
+      <header className="py-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm relative z-10 shadow-sm w-full">
+        <div className="container mx-auto flex justify-between items-center w-full max-w-full px-4 md:px-8">
           <Link to="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-purple-600 hover:to-blue-600 transition-all duration-500">
             InterviewInsight
           </Link>
@@ -37,8 +37,8 @@ const Layout = ({ children, title }: LayoutProps) => {
       </header>
       
       {title && (
-        <div className="pt-10 pb-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm relative z-10">
-          <div className="container mx-auto max-w-7xl">
+        <div className="pt-10 pb-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm relative z-10 w-full">
+          <div className="container mx-auto w-full max-w-full px-4 md:px-8">
             <motion.h1 
               variants={fadeIn("up", 0.2)}
               initial="hidden"
@@ -51,12 +51,14 @@ const Layout = ({ children, title }: LayoutProps) => {
         </div>
       )}
       
-      <main className="flex-1 px-4 md:px-8 py-6 relative z-10">
-        {children}
+      <main className="flex-1 px-4 md:px-8 py-6 relative z-10 w-full">
+        <div className="w-full max-w-full mx-auto">
+          {children}
+        </div>
       </main>
       
-      <footer className="py-6 px-4 md:px-8 border-t border-neutral-100/50 dark:border-neutral-800/50 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm relative z-10 shadow-sm">
-        <div className="container mx-auto max-w-7xl text-center text-sm text-neutral-500">
+      <footer className="py-6 px-4 md:px-8 border-t border-neutral-100/50 dark:border-neutral-800/50 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm relative z-10 shadow-sm w-full">
+        <div className="container mx-auto text-center text-sm text-neutral-500 w-full max-w-full">
           © {new Date().getFullYear()} InterviewInsight. All rights reserved.
         </div>
       </footer>
