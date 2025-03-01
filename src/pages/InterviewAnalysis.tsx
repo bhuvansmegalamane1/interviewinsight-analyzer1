@@ -50,17 +50,17 @@ const InterviewAnalysis = () => {
         variants={fadeIn("up", 0.3)}
         initial="hidden"
         animate="show"
-        className="max-w-6xl mx-auto py-8"
+        className="max-w-7xl mx-auto py-8"
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
-            <Card className="overflow-hidden border border-neutral-200 dark:border-neutral-800">
+            <Card className="overflow-hidden border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow duration-300">
               <VideoPlayer videoUrl={data.videoUrl} />
             </Card>
           </div>
           
           <div>
-            <Card className="p-6 border border-neutral-200 dark:border-neutral-800 h-full">
+            <Card className="p-6 border border-neutral-200 dark:border-neutral-800 h-full shadow-sm hover:shadow-md transition-shadow duration-300">
               <h3 className="text-lg font-medium mb-4">Overview</h3>
               
               <div className="space-y-6">

@@ -1,8 +1,7 @@
+
+/* Removing restrictive max-width to allow better desktop fitting */
 #root {
-  max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
 .logo {
