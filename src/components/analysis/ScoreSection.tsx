@@ -11,20 +11,33 @@ interface ScoreSectionProps {
 }
 
 const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
-  const mainScores = [
+  // For no content case, create data with all zeros
+  const mainScores = hasContent ? [
     { name: "Verbal", value: data.scores.verbal },
     { name: "Non-verbal", value: data.scores.nonVerbal },
     { name: "Content", value: data.scores.content },
     { name: "Engagement", value: data.scores.engagement },
+  ] : [
+    { name: "Verbal", value: 0 },
+    { name: "Non-verbal", value: 0 },
+    { name: "Content", value: 0 },
+    { name: "Engagement", value: 0 },
   ];
   
-  const detailedScores = [
+  const detailedScores = hasContent ? [
     { name: "Clarity", value: data.detailedScores.clarity },
     { name: "Conciseness", value: data.detailedScores.conciseness },
     { name: "Eye Contact", value: data.detailedScores.eyeContact },
     { name: "Posture", value: data.detailedScores.posture },
     { name: "Relevance", value: data.detailedScores.relevance },
     { name: "Confidence", value: data.detailedScores.confidence },
+  ] : [
+    { name: "Clarity", value: 0 },
+    { name: "Conciseness", value: 0 },
+    { name: "Eye Contact", value: 0 },
+    { name: "Posture", value: 0 },
+    { name: "Relevance", value: 0 },
+    { name: "Confidence", value: 0 },
   ];
   
   // Colors for the pie chart
@@ -84,6 +97,36 @@ const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
               <p className="text-neutral-600 dark:text-neutral-400">
                 Try recording another interview while actively speaking to receive a full analysis of your performance.
               </p>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Additional section to show zero scores in charts for visual reference */}
+        <motion.div variants={fadeIn("up", 0.4)}>
+          <h2 className="text-xl font-medium mb-4">Performance Metrics (No Data)</h2>
+          <Card className="p-6 border border-neutral-200 dark:border-neutral-800">
+            <h3 className="text-lg font-medium mb-4">Main Categories</h3>
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={mainScores}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name }) => `${name}: 0%`}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {mainScores.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill="#cccccc" />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </Card>
         </motion.div>

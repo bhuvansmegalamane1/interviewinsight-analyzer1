@@ -106,6 +106,13 @@ const InterviewAnalysis = () => {
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       We couldn't detect any speech in your interview. Scores are unavailable without verbal content to analyze.
                     </p>
+                    <div className="mt-4 text-center">
+                      <span className="text-xs text-neutral-500">Overall Score</span>
+                      <div className="flex items-end gap-2 justify-center">
+                        <span className="text-4xl font-medium">0</span>
+                        <span className="text-sm text-neutral-500 mb-1">/100</span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
