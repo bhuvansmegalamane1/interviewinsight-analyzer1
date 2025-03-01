@@ -64,32 +64,50 @@ const InterviewAnalysis = () => {
               <h3 className="text-lg font-medium mb-4">Overview</h3>
               
               <div className="space-y-6">
-                <div>
-                  <span className="text-xs text-neutral-500">Overall Score</span>
-                  <div className="flex items-end gap-2">
-                    <span className="text-4xl font-medium">{data.overallScore}</span>
-                    <span className="text-sm text-neutral-500 mb-1">/100</span>
+                {hasContent ? (
+                  <>
+                    <div>
+                      <span className="text-xs text-neutral-500">Overall Score</span>
+                      <div className="flex items-end gap-2">
+                        <span className="text-4xl font-medium">{data.overallScore}</span>
+                        <span className="text-sm text-neutral-500 mb-1">/100</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Verbal Communication</span>
+                        <span className="font-medium">{data.scores.verbal}/100</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Non-verbal Cues</span>
+                        <span className="font-medium">{data.scores.nonVerbal}/100</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Content Quality</span>
+                        <span className="font-medium">{data.scores.content}/100</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Engagement</span>
+                        <span className="font-medium">{data.scores.engagement}/100</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-3">
+                    <div className="text-amber-500 mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2">
+                        <path d="M12 9v4"/>
+                        <path d="M12 17h.01"/>
+                        <path d="M3.44 19h17.12a2 2 0 0 0 1.72-3.01L13.8 4.1a2 2 0 0 0-3.6 0L1.72 15.99A2 2 0 0 0 3.44 19z"/>
+                      </svg>
+                      <span className="font-medium">No Speech Detected</span>
+                    </div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      We couldn't detect any speech in your interview. Scores are unavailable without verbal content to analyze.
+                    </p>
                   </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Verbal Communication</span>
-                    <span className="font-medium">{data.scores.verbal}/100</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Non-verbal Cues</span>
-                    <span className="font-medium">{data.scores.nonVerbal}/100</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Content Quality</span>
-                    <span className="font-medium">{data.scores.content}/100</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Engagement</span>
-                    <span className="font-medium">{data.scores.engagement}/100</span>
-                  </div>
-                </div>
+                )}
                 
                 <div>
                   <h4 className="text-sm font-medium mb-2">Summary</h4>
@@ -110,7 +128,7 @@ const InterviewAnalysis = () => {
             </TabsList>
             
             <TabsContent value="scores" className="mt-0">
-              <ScoreSection data={data} />
+              <ScoreSection data={data} hasContent={hasContent} />
             </TabsContent>
             
             <TabsContent value="feedback" className="mt-0">
