@@ -4,13 +4,14 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fadeIn, staggerContainer } from "@/lib/animations";
+import { ArrowRight, Video, BarChart3, Award } from "lucide-react";
 
 const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="py-8 px-4 md:px-8 border-b border-neutral-100 dark:border-neutral-800">
+      <header className="py-8 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm">
         <div className="container mx-auto">
-          <h1 className="text-3xl font-medium">InterviewInsight</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">InterviewInsight</h1>
         </div>
       </header>
       
@@ -24,10 +25,10 @@ const Index = () => {
           variants={fadeIn("up", 0.3)}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <span className="inline-block px-3 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm mb-4">
+          <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-full text-sm font-medium text-blue-800 dark:text-blue-300 mb-4">
             AI-Powered Interview Analysis
           </span>
-          <h2 className="text-4xl md:text-5xl font-medium mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Elevate Your Interview Performance
           </h2>
           <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8">
@@ -36,13 +37,15 @@ const Index = () => {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/upload">
-              <Button size="lg" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px]">
+              <Button size="lg" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px] gradient-button text-white shadow-md group">
                 Upload Interview
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
             <Link to="/practice">
-              <Button size="lg" variant="outline" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px]">
+              <Button size="lg" variant="outline" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px] border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 group">
                 Practice Interview
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
           </div>
@@ -52,31 +55,31 @@ const Index = () => {
           variants={fadeIn("up", 0.5)}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl"
         >
-          <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800">
-            <div className="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M12 8v8" /><path d="M8 12h8" /></svg>
+          <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800 glow-effect hover:border-blue-200 dark:hover:border-blue-800 overflow-hidden">
+            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4 text-white shadow-md float-animation">
+              <Video size={24} />
             </div>
-            <h3 className="text-lg font-medium mb-2">Upload Interviews</h3>
+            <h3 className="text-lg font-medium mb-2 text-blue-700 dark:text-blue-400">Upload Interviews</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
               Upload recorded interviews for AI analysis and receive detailed feedback.
             </p>
           </Card>
           
-          <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800">
-            <div className="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect width="15" height="14" x="1" y="5" rx="2" ry="2" /></svg>
+          <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800 glow-effect hover:border-purple-200 dark:hover:border-purple-800 overflow-hidden">
+            <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mb-4 text-white shadow-md float-animation">
+              <BarChart3 size={24} />
             </div>
-            <h3 className="text-lg font-medium mb-2">Practice Mode</h3>
+            <h3 className="text-lg font-medium mb-2 text-purple-700 dark:text-purple-400">Practice Mode</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
               Practice interviews directly in the app with real-time recording and analysis.
             </p>
           </Card>
           
-          <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800">
-            <div className="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+          <Card className="p-6 hover:shadow-md transition-all duration-300 border border-neutral-200 dark:border-neutral-800 glow-effect hover:border-indigo-200 dark:hover:border-indigo-800 overflow-hidden">
+            <div className="h-12 w-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mb-4 text-white shadow-md float-animation">
+              <Award size={24} />
             </div>
-            <h3 className="text-lg font-medium mb-2">Insightful Analytics</h3>
+            <h3 className="text-lg font-medium mb-2 text-indigo-700 dark:text-indigo-400">Insightful Analytics</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
               Visualize your performance with comprehensive scores and charts.
             </p>
@@ -84,7 +87,7 @@ const Index = () => {
         </motion.div>
       </motion.main>
       
-      <footer className="py-6 px-4 md:px-8 border-t border-neutral-100 dark:border-neutral-800">
+      <footer className="py-6 px-4 md:px-8 border-t border-neutral-100/50 dark:border-neutral-800/50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm">
         <div className="container mx-auto text-center text-sm text-neutral-500">
           © {new Date().getFullYear()} InterviewInsight. All rights reserved.
         </div>
