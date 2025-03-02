@@ -44,40 +44,43 @@
   color: #888;
 }
 
-/* Professional gradient button effect */
+/* Enhanced Professional gradient button effect */
 .gradient-button {
   background-size: 200% 200%;
   background-image: linear-gradient(to right, #3b82f6 0%, #8b5cf6 51%, #3b82f6 100%);
   transition: 0.5s;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .gradient-button:hover {
   background-position: right center;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
 }
 
-/* Professional animations */
+/* Enhanced Professional animations */
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
 }
 
 .float-animation {
-  animation: float 5s ease-in-out infinite;
+  animation: float 6s ease-in-out infinite;
 }
 
-/* Pulse animation for accent elements */
+/* Enhanced Pulse animation for accent elements */
 @keyframes pulse-gentle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .pulse-animation {
-  animation: pulse-gentle 4s ease-in-out infinite;
+  animation: pulse-gentle 3s ease-in-out infinite;
 }
 
-/* Rotating animation for background elements */
+/* Enhanced Rotating animation for background elements */
 @keyframes slow-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -87,13 +90,20 @@
   animation: slow-spin 30s linear infinite;
 }
 
-/* Professional card styles */
+/* Enhanced Professional card styles */
 .glass-card {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 32px 0 rgba(31, 38, 135, 0.2);
+  transform: translateY(-5px);
 }
 
 .dark .glass-card {
@@ -101,26 +111,30 @@
   border: 1px solid rgba(255, 255, 255, 0.125);
 }
 
-/* Professional background gradients */
+.dark .glass-card:hover {
+  background: rgba(17, 25, 40, 0.85);
+}
+
+/* Enhanced Professional background gradients */
 .bg-gradient-pro {
-  background: linear-gradient(180deg, rgba(239,242,247,0.6) 0%, rgba(215,222,247,0.2) 100%);
+  background: linear-gradient(180deg, rgba(239,242,247,0.8) 0%, rgba(215,222,247,0.4) 100%);
 }
 
 .dark .bg-gradient-pro {
   background: linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.6) 100%);
 }
 
-/* Professional card hover effects */
+/* Enhanced Professional card hover effects */
 .card-scale-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
 .card-scale-hover:hover {
-  transform: scale(1.02);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  transform: scale(1.03);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* Professional section backgrounds */
+/* Enhanced Professional section backgrounds */
 .section-bg {
   position: relative;
   overflow: hidden;
@@ -133,29 +147,29 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
   z-index: -1;
 }
 
 .dark .section-bg::before {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
 }
 
-/* Advanced background grid */
+/* Enhanced background grid */
 .bg-grid {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
-}
-
-.dark .bg-grid {
+  background-size: 50px 50px;
   background-image: 
     linear-gradient(to right, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
 }
 
-/* Animated gradient text */
+.dark .bg-grid {
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.15) 1px, transparent 1px);
+}
+
+/* Enhanced Animated gradient text */
 .animated-gradient-text {
   background: linear-gradient(to right, #3b82f6, #8b5cf6, #6366f1, #3b82f6);
   background-size: 300% 100%;
@@ -169,4 +183,60 @@
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* New: Professional 3D depth effects */
+.depth-effect {
+  box-shadow: 
+    0 1px 1px rgba(0,0,0,0.05),
+    0 2px 2px rgba(0,0,0,0.05),
+    0 4px 4px rgba(0,0,0,0.05),
+    0 8px 8px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.depth-effect:hover {
+  box-shadow: 
+    0 1px 1px rgba(0,0,0,0.08),
+    0 2px 2px rgba(0,0,0,0.08),
+    0 4px 4px rgba(0,0,0,0.08),
+    0 8px 8px rgba(0,0,0,0.08),
+    0 16px 16px rgba(0,0,0,0.08);
+}
+
+/* New: Animated background mesh gradient */
+.mesh-gradient {
+  background: linear-gradient(-45deg, 
+    rgba(59, 130, 246, 0.1),
+    rgba(139, 92, 246, 0.1), 
+    rgba(99, 102, 241, 0.1),
+    rgba(79, 70, 229, 0.1));
+  background-size: 400% 400%;
+  animation: gradient-move 15s ease infinite;
+}
+
+.dark .mesh-gradient {
+  background: linear-gradient(-45deg, 
+    rgba(59, 130, 246, 0.2),
+    rgba(139, 92, 246, 0.2), 
+    rgba(99, 102, 241, 0.2),
+    rgba(79, 70, 229, 0.2));
+  background-size: 400% 400%;
+  animation: gradient-move 15s ease infinite;
+}
+
+@keyframes gradient-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* New: Professional dot pattern overlay */
+.dot-pattern {
+  background-image: radial-gradient(rgba(59, 130, 246, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.dark .dot-pattern {
+  background-image: radial-gradient(rgba(59, 130, 246, 0.25) 1px, transparent 1px);
 }

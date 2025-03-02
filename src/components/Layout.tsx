@@ -11,18 +11,25 @@ interface LayoutProps {
 
 const Layout = ({ children, title }: LayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col relative w-full">
-      {/* Professional background gradient overlay */}
+    <div className="min-h-screen flex flex-col relative w-full overflow-hidden">
+      {/* Enhanced professional background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-overlay z-0"></div>
       
-      {/* Background graphics elements */}
+      {/* Enhanced animated mesh gradient background */}
+      <div className="absolute inset-0 mesh-gradient z-[-1]"></div>
+      
+      {/* Enhanced dot pattern overlay */}
+      <div className="absolute inset-0 dot-pattern z-[-1] opacity-50"></div>
+      
+      {/* Enhanced floating shapes animation */}
       <div className="floating-shapes">
-        {Array.from({ length: 12 }).map((_, i) => {
-          const size = Math.floor(Math.random() * 200) + 50;
+        {Array.from({ length: 15 }).map((_, i) => {
+          const size = Math.floor(Math.random() * 300) + 100;
           const left = Math.floor(Math.random() * 100);
           const top = Math.floor(Math.random() * 100);
           const delay = Math.floor(Math.random() * 10);
           const duration = Math.floor(Math.random() * 20) + 15;
+          const opacity = (Math.random() * 0.08) + 0.05;
           const type = i % 3 === 0 ? 'shape-blue' : i % 3 === 1 ? 'shape-purple' : 'shape-indigo';
           
           return (
@@ -35,7 +42,8 @@ const Layout = ({ children, title }: LayoutProps) => {
                 left: `${left}%`,
                 top: `${top}%`,
                 animationDelay: `${delay}s`,
-                animationDuration: `${duration}s`
+                animationDuration: `${duration}s`,
+                opacity: opacity
               }}
             />
           );
