@@ -15,6 +15,38 @@ const Layout = ({ children, title }: LayoutProps) => {
       {/* Professional background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-overlay z-0"></div>
       
+      {/* Background graphics elements */}
+      <div className="floating-shapes">
+        {Array.from({ length: 12 }).map((_, i) => {
+          const size = Math.floor(Math.random() * 200) + 50;
+          const left = Math.floor(Math.random() * 100);
+          const top = Math.floor(Math.random() * 100);
+          const delay = Math.floor(Math.random() * 10);
+          const duration = Math.floor(Math.random() * 20) + 15;
+          const type = i % 3 === 0 ? 'shape-blue' : i % 3 === 1 ? 'shape-purple' : 'shape-indigo';
+          
+          return (
+            <div 
+              key={i} 
+              className={`shape ${type}`} 
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                left: `${left}%`,
+                top: `${top}%`,
+                animationDelay: `${delay}s`,
+                animationDuration: `${duration}s`
+              }}
+            />
+          );
+        })}
+      </div>
+      
+      {/* Decorative background patterns */}
+      <div className="bg-lines"></div>
+      <div className="bg-gradient-radial"></div>
+      <div className="bg-grid absolute inset-0 z-[-1]"></div>
+      
       <header className="py-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm relative z-10 shadow-sm w-full">
         <div className="container mx-auto flex justify-between items-center w-full max-w-full px-4 md:px-8">
           <Link to="/" className="text-xl font-bold highlight-gradient flex items-center gap-2 hover:opacity-90 transition-opacity">
