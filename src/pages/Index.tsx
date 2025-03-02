@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fadeIn, staggerContainer } from "@/lib/animations";
-import { ArrowRight, Video, BarChart3, Award } from "lucide-react";
+import { ArrowRight, Video, PieChart, Award } from "lucide-react";
 import Layout from "@/components/Layout";
 
 const Index = () => {
@@ -62,7 +62,7 @@ const Index = () => {
           
           <Card className="p-8 hover:shadow-xl transition-all duration-300 border border-neutral-200 dark:border-neutral-800 hover:border-purple-200 dark:hover:border-purple-800 overflow-hidden glass-card group">
             <div className="h-16 w-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
-              <BarChart3 size={28} />
+              <PieChart size={28} />
             </div>
             <h3 className="text-xl font-semibold mb-3 text-purple-700 dark:text-purple-400 group-hover:translate-x-1 transition-transform">Practice Mode</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
