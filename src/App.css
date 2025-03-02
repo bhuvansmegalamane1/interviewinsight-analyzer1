@@ -1,6 +1,8 @@
+
 /* Removing restrictive max-width to allow better desktop fitting */
 #root {
   margin: 0 auto;
+  width: 100%;
   /* Removing max-width to allow full screen width */
 }
 
@@ -42,19 +44,19 @@
   color: #888;
 }
 
-/* Gradient button effect */
+/* Professional gradient button effect */
 .gradient-button {
   background-size: 200% 200%;
-  background-image: linear-gradient(to right, #4776E6 0%, #8E54E9 51%, #4776E6 100%);
+  background-image: linear-gradient(to right, #3b82f6 0%, #8b5cf6 51%, #3b82f6 100%);
   transition: 0.5s;
 }
 
 .gradient-button:hover {
   background-position: right center;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
 }
 
-/* Custom animations */
+/* Professional animations */
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
@@ -65,7 +67,7 @@
   animation: float 5s ease-in-out infinite;
 }
 
-/* Custom card styles */
+/* Professional card styles */
 .glass-card {
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(4px);
@@ -77,4 +79,44 @@
 .dark .glass-card {
   background: rgba(17, 25, 40, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+/* Professional background gradients */
+.bg-gradient-pro {
+  background: linear-gradient(180deg, rgba(239,242,247,0.6) 0%, rgba(215,222,247,0.2) 100%);
+}
+
+.dark .bg-gradient-pro {
+  background: linear-gradient(180deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.6) 100%);
+}
+
+/* Professional card hover effects */
+.card-scale-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-scale-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* Professional section backgrounds */
+.section-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.section-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  z-index: -1;
+}
+
+.dark .section-bg::before {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
 }

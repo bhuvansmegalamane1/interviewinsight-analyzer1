@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { fadeIn } from "@/lib/animations";
+import { Globe } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,13 +12,14 @@ interface LayoutProps {
 const Layout = ({ children, title }: LayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col relative w-full">
-      {/* Subtle background gradient overlay */}
+      {/* Professional background gradient overlay */}
       <div className="absolute inset-0 bg-gradient-overlay z-0"></div>
       
       <header className="py-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm relative z-10 shadow-sm w-full">
         <div className="container mx-auto flex justify-between items-center w-full max-w-full px-4 md:px-8">
-          <Link to="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-purple-600 hover:to-blue-600 transition-all duration-500">
-            InterviewInsight
+          <Link to="/" className="text-xl font-bold highlight-gradient flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <Globe size={24} className="text-blue-600 dark:text-blue-400" />
+            <span>InterviewInsight</span>
           </Link>
           <nav className="flex gap-6">
             <Link 
@@ -37,13 +39,13 @@ const Layout = ({ children, title }: LayoutProps) => {
       </header>
       
       {title && (
-        <div className="pt-10 pb-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm relative z-10 w-full">
+        <div className="pt-10 pb-6 px-4 md:px-8 border-b border-neutral-100/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm relative z-10 w-full section-bg">
           <div className="container mx-auto w-full max-w-full px-4 md:px-8">
             <motion.h1 
               variants={fadeIn("up", 0.2)}
               initial="hidden"
               animate="show"
-              className="text-2xl font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+              className="text-2xl font-medium highlight-gradient"
             >
               {title}
             </motion.h1>
@@ -51,7 +53,7 @@ const Layout = ({ children, title }: LayoutProps) => {
         </div>
       )}
       
-      <main className="flex-1 px-4 md:px-8 py-6 relative z-10 w-full">
+      <main className="flex-1 px-4 md:px-8 py-6 relative z-10 w-full bg-gradient-pro">
         <div className="w-full max-w-full mx-auto">
           {children}
         </div>
