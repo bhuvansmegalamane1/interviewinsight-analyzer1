@@ -15,6 +15,8 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
         const storedData = sessionStorage.getItem('interviewData');
         if (storedData) {
           sessionData = JSON.parse(storedData);
+          console.log("Retrieved session data:", sessionData);
+          hasContent = sessionData.hasSpokenContent; // Use actual speech detection
         }
       } catch (e) {
         console.error("Error parsing session data:", e);
@@ -25,24 +27,39 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
       const isShortAnswer = recordingDuration < 30; // Less than 30 seconds is considered short
       const isLongAnswer = recordingDuration > 120; // More than 2 minutes is considered long
       
+      // Extract data from session if available
+      const speechDuration = sessionData?.speechDuration || 0;
+      const speechPercentage = sessionData?.speechPercentage || 0;
+      const postureFeedback = sessionData?.postureFeedback || "good";
+      const eyeContactScore = sessionData?.eyeContactScore || 70;
+      const confidenceScore = sessionData?.confidenceScore || 65;
+      const facialExpressions = sessionData?.facialExpressions || "neutral";
+      const grammarIssuesCount = sessionData?.grammarIssues || 0;
+      
       if (hasContent) {
-        // Good to moderate score for videos with content
-        // The more realistic implementation would analyze the actual content quality
+        // Calculate performance scores using the collected data
+        const verbalScore = speechPercentage > 30 ? 
+                           Math.min(100, 60 + (speechPercentage / 4) - (grammarIssuesCount * 5)) : 
+                           Math.min(100, 30 + (speechPercentage / 2));
         
-        // Calculate scores based on detection metrics
-        const eyeContactScore = Math.floor(Math.random() * 30) + 60; // 60-90 score range
-        const postureScore = Math.floor(Math.random() * 25) + 65; // 65-90 score range
-        const verbalScore = Math.floor(Math.random() * 30) + 60; // 60-90 score range
-        const contentScore = isShortAnswer ? (Math.floor(Math.random() * 20) + 50) : // 50-70 for short answers 
-                            isLongAnswer ? (Math.floor(Math.random() * 20) + 60) : // 60-80 for long answers
-                            (Math.floor(Math.random() * 25) + 70); // 70-95 for ideal length answers
-        const engagementScore = Math.floor(Math.random() * 25) + 65; // 65-90 score range
+        const postureScore = postureFeedback === "good" ? 
+                            Math.floor(Math.random() * 15) + 80 : // 80-95 for good posture
+                            Math.floor(Math.random() * 20) + 55;  // 55-75 for poor posture
+        
+        const contentScore = speechDuration > 20 ? 
+                            Math.min(100, 65 + (speechDuration / 10) - (isLongAnswer ? 15 : 0)) :
+                            Math.min(100, 40 + (speechDuration * 1.5));
+        
+        const engagementScore = Math.min(100, 
+                               (eyeContactScore * 0.4) + 
+                               ((facialExpressions === "positive" ? 90 : 
+                                 facialExpressions === "neutral" ? 70 : 50) * 0.3) + 
+                               (confidenceScore * 0.3));
         
         // Calculate detailed scores
-        const clarityScore = Math.floor(Math.random() * 20) + 70; // 70-90
+        const clarityScore = Math.min(100, verbalScore + Math.floor(Math.random() * 15) - 5);
         const concisenessScore = isShortAnswer ? 60 : (isLongAnswer ? 65 : 85); // Penalize very short or long answers
-        const relevanceScore = Math.floor(Math.random() * 15) + 75; // 75-90
-        const confidenceScore = Math.floor(Math.random() * 30) + 65; // 65-95
+        const relevanceScore = Math.min(100, contentScore + Math.floor(Math.random() * 10) - 5);
         
         // Calculate overall score (weighted average)
         const overallScore = Math.floor(
@@ -66,9 +83,9 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
             "Your vocabulary was adequate, though occasionally repetitive. Consider expanding your professional terminology and varying your word choice for more impact." :
             "Your vocabulary was limited and repetitive. Work on expanding your professional vocabulary and using more varied language to express your ideas more effectively.",
           
-          fillerWords: verbalScore > 75 ? 
+          fillerWords: grammarIssuesCount < 2 ?
             "You used minimal filler words ('um', 'uh', 'like', etc.), which contributed to your professional delivery. Continue to be mindful of these in future interviews." :
-            verbalScore > 60 ? 
+            grammarIssuesCount < 5 ?
             "You occasionally used filler words ('um', 'uh', 'like', etc.) – about 10-15 instances throughout. Being more conscious of these would enhance your verbal delivery." :
             "You frequently used filler words ('um', 'uh', 'like', etc.) – over 20 instances throughout the interview. This significantly impacted your professional delivery. Practice pausing instead of using fillers."
         };
@@ -80,17 +97,19 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
             "Your eye contact was generally good, though inconsistent at times, particularly when discussing more challenging topics. Work on maintaining steady eye contact even when under pressure." :
             "Your eye contact was minimal or inconsistent throughout the interview. This can give the impression of nervousness or lack of confidence. Practice looking directly at the camera more consistently.",
           
-          facialExpressions: engagementScore > 80 ? 
+          facialExpressions: facialExpressions === "positive" ? 
             "Your facial expressions were animated and appropriate, showing engagement and enthusiasm throughout the interview. You effectively conveyed interest in the conversation." :
-            engagementScore > 65 ? 
+            facialExpressions === "neutral" ? 
             "Your facial expressions were appropriate but somewhat limited in range. Incorporating more expressive responses would better demonstrate your engagement and enthusiasm." :
             "Your facial expressions were minimal or flat throughout the interview. This can make it difficult for interviewers to gauge your interest or enthusiasm. Practice incorporating more expressive responses.",
           
-          posture: postureScore > 80 ? 
+          posture: postureFeedback === "good" ? 
             "Your posture was excellent – upright, attentive, and professional throughout. This non-verbal cue significantly enhanced your professional presence." :
-            postureScore > 65 ? 
-            "Your posture was generally good but occasionally showed signs of tension or slouching. Maintaining consistent, relaxed but upright posture would enhance your presence." :
-            "Your posture needs improvement as you frequently slouched or appeared tense. This can diminish your professional presence. Practice sitting upright while keeping your shoulders relaxed."
+            postureFeedback === "slouching" ? 
+            "Your posture showed signs of slouching at times. Maintaining consistent, upright posture would enhance your presence and convey more confidence." :
+            postureFeedback === "tooClose" ?
+            "You were positioned too close to the camera at times, which can feel intrusive to the interviewer. Maintain an appropriate distance from the camera." :
+            "You were positioned too far from the camera at times, which can reduce your presence. Move closer to ensure you're properly framed in the video."
         };
         
         const contentFeedback = {
@@ -126,11 +145,13 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
             "Your level of engagement was good but somewhat inconsistent. Your energy fluctuated at times, with stronger engagement at the beginning than later in the interview. Aim for more consistent energy throughout." :
             "Your engagement level appeared low throughout much of the interview. More animation, enthusiasm, and energy would significantly improve the impression you make on interviewers.",
           
-          appearance: postureScore > 80 ? 
+          appearance: postureFeedback === "good" ? 
             "Your professional appearance was excellent. You were well-groomed, appropriately dressed, and positioned well on camera with good lighting and framing." :
-            postureScore > 65 ? 
-            "Your appearance was generally professional, though there were some aspects that could be improved, such as better lighting, camera positioning, or more formal attire." :
-            "Your appearance needs improvement for professional interviews. Focus on better grooming, more appropriate attire, improved lighting, and better camera positioning."
+            postureFeedback === "slouching" ? 
+            "Your appearance was generally professional, though your posture could be improved. Sitting up straight would enhance your professional image." :
+            postureFeedback === "tooClose" || postureFeedback === "tooFar" ?
+            "Your appearance was generally professional, though your positioning relative to the camera could be improved for better framing." :
+            "Your appearance needs improvement for professional interviews. Focus on better positioning and posture for improved visual presence."
         };
         
         // Identify strengths based on highest scores
@@ -142,6 +163,8 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
         if (concisenessScore >= 80) strengths.push("Concise and to-the-point responses");
         if (confidenceScore >= 85) strengths.push("Confident and self-assured presentation");
         if (relevanceScore >= 85) strengths.push("Highly relevant responses that directly address questions");
+        if (facialExpressions === "positive") strengths.push("Positive and engaging facial expressions");
+        if (postureFeedback === "good") strengths.push("Excellent posture and professional presence");
         // Ensure we have at least 2 strengths
         if (strengths.length < 2) {
           strengths.push("Willingness to engage with challenging questions");
@@ -152,11 +175,13 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
         const improvements = [];
         if (verbalScore < 70) improvements.push("Reduce filler words and improve verbal clarity");
         if (eyeContactScore < 70) improvements.push("Maintain more consistent eye contact");
-        if (postureScore < 70) improvements.push("Improve posture and body language");
+        if (postureFeedback !== "good") improvements.push("Improve posture and body language");
         if (contentScore < 70) improvements.push("Provide more structured and relevant responses");
         if (engagementScore < 70) improvements.push("Show more enthusiasm and energy during responses");
         if (concisenessScore < 70) improvements.push(isShortAnswer ? "Provide more detailed and complete answers" : "Make responses more concise and focused");
         if (confidenceScore < 70) improvements.push("Project more confidence in your tone and delivery");
+        if (grammarIssuesCount > 3) improvements.push("Reduce grammatical errors and filler words");
+        if (facialExpressions === "negative") improvements.push("Display more positive facial expressions");
         // Ensure we have at least 2 improvements
         if (improvements.length < 2) {
           if (concisenessScore < 90) improvements.push(isShortAnswer ? "Elaborate more on your examples" : "Be slightly more concise in your responses");
@@ -170,7 +195,9 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
         if (contentScore < 75) recommendations.push("Use the STAR method (Situation, Task, Action, Result) to structure your answers");
         if (engagementScore < 75) recommendations.push("Practice showing more enthusiasm by slightly increasing your energy level beyond what feels natural");
         if (confidenceScore < 75) recommendations.push("Practice power posing for 2 minutes before interviews to boost confidence");
-        if (verbalScore < 80) recommendations.push("Record practice interviews and count your filler words to become more aware of them");
+        if (grammarIssuesCount > 2) recommendations.push("Record practice interviews and count your filler words to become more aware of them");
+        if (postureFeedback !== "good") recommendations.push("Practice interviews in front of a mirror to monitor your posture and body language");
+        if (facialExpressions !== "positive") recommendations.push("Practice smiling more during interviews, even when speaking about challenging topics");
         // Ensure we have at least 3 recommendations
         if (recommendations.length < 3) {
           recommendations.push("Prepare 5-7 concrete examples of your achievements that can be adapted to different questions");
@@ -185,7 +212,7 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
           overallScore,
           scores: {
             verbal: verbalScore,
-            nonVerbal: Math.floor((eyeContactScore + postureScore) / 2), // Average of eye contact and posture
+            nonVerbal: Math.floor((eyeContactScore + (postureFeedback === "good" ? 85 : 60)) / 2),
             content: contentScore,
             engagement: engagementScore
           },
@@ -193,7 +220,7 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
             clarity: clarityScore,
             conciseness: concisenessScore,
             eyeContact: eyeContactScore,
-            posture: postureScore,
+            posture: postureFeedback === "good" ? 85 : postureFeedback === "slouching" ? 60 : 70,
             relevance: relevanceScore,
             confidence: confidenceScore
           },

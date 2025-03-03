@@ -27,19 +27,13 @@ const Index = () => {
             Elevate Your Interview Performance
           </h2>
           <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
-            Receive detailed feedback, insights, and performance scores by analyzing your interview videos or practice directly within our platform.
+            Receive detailed feedback, insights, and performance scores by practicing interviews directly within our platform.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/upload">
-              <Button size="lg" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px] gradient-button text-white shadow-lg hover:shadow-blue-500/25 group depth-effect">
-                Upload Interview
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
             <Link to="/practice">
-              <Button size="lg" variant="outline" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px] border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 shadow-md group depth-effect">
-                Practice Interview
+              <Button size="lg" className="rounded-full px-8 transition-all duration-300 hover:translate-y-[-2px] gradient-button text-white shadow-lg hover:shadow-blue-500/25 group depth-effect">
+                Start Practice Interview
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
@@ -54,9 +48,9 @@ const Index = () => {
             <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
               <Video size={28} />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-blue-700 dark:text-blue-400 group-hover:translate-x-1 transition-transform">Upload Interviews</h3>
+            <h3 className="text-xl font-semibold mb-3 text-blue-700 dark:text-blue-400 group-hover:translate-x-1 transition-transform">Live Interviews</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Upload recorded interviews for AI analysis and receive detailed feedback on your performance, communication style, and content.
+              Practice interviews in real-time with our AI-powered analysis that tracks your verbal and non-verbal communication skills.
             </p>
           </Card>
           
@@ -64,9 +58,9 @@ const Index = () => {
             <div className="h-16 w-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
               <PieChart size={28} />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-purple-700 dark:text-purple-400 group-hover:translate-x-1 transition-transform">Practice Mode</h3>
+            <h3 className="text-xl font-semibold mb-3 text-purple-700 dark:text-purple-400 group-hover:translate-x-1 transition-transform">Comprehensive Analysis</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Practice interviews directly in the app with real-time recording and analysis to improve your interview skills instantly.
+              Get detailed feedback on your speech, body language, eye contact, grammar, and confidence with accurate AI analysis.
             </p>
           </Card>
           
@@ -74,9 +68,9 @@ const Index = () => {
             <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
               <Award size={28} />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-indigo-700 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">Insightful Analytics</h3>
+            <h3 className="text-xl font-semibold mb-3 text-indigo-700 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">Actionable Insights</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Visualize your performance with comprehensive scores and analytics to track your improvement over time.
+              Receive personalized recommendations to improve your interview skills based on your specific performance patterns.
             </p>
           </Card>
         </motion.div>

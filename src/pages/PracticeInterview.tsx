@@ -29,6 +29,11 @@ const PracticeInterview = () => {
     status: "good", // "good", "slouching", "tooClose", "tooFar"
     lastChecked: Date.now()
   });
+  const [eyeContactScore, setEyeContactScore] = useState(0);
+  const [confidenceScore, setConfidenceScore] = useState(0);
+  const [grammarIssues, setGrammarIssues] = useState<string[]>([]);
+  const [facialExpressions, setFacialExpressions] = useState("neutral"); // "neutral", "positive", "negative"
+  const [audioAnalysisInterval, setAudioAnalysisInterval] = useState<number | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -37,6 +42,9 @@ const PracticeInterview = () => {
   const dataArrayRef = useRef<Uint8Array | null>(null);
   const silenceTimer = useRef<number | null>(null);
   const postureCheckInterval = useRef<number | null>(null);
+  const expressionCheckInterval = useRef<number | null>(null);
+  const eyeContactCheckInterval = useRef<number | null>(null);
+  const grammarCheckInterval = useRef<number | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -59,42 +67,132 @@ const PracticeInterview = () => {
       if (postureCheckInterval.current) {
         clearInterval(postureCheckInterval.current);
       }
+      if (expressionCheckInterval.current) {
+        clearInterval(expressionCheckInterval.current);
+      }
+      if (eyeContactCheckInterval.current) {
+        clearInterval(eyeContactCheckInterval.current);
+      }
+      if (grammarCheckInterval.current) {
+        clearInterval(grammarCheckInterval.current);
+      }
       if (audioContext) {
         audioContext.close();
       }
+      if (audioAnalysisInterval) {
+        clearInterval(audioAnalysisInterval);
+      }
     };
-  }, [stream, audioContext]);
+  }, [stream, audioContext, audioAnalysisInterval]);
 
-  // Simple facial posture detection simulator
-  // In a real app, this would use actual computer vision AI
+  // Simulate facial expression detection
+  const checkFacialExpression = () => {
+    // In a real implementation, this would use computer vision AI
+    // For simulation, we'll randomly transition between expressions with a bias toward positive
+    const expressionRoll = Math.random();
+    if (expressionRoll > 0.7) {
+      setFacialExpressions("positive");
+    } else if (expressionRoll > 0.5) {
+      setFacialExpressions("neutral");
+    } else if (expressionRoll > 0.35) {
+      setFacialExpressions("negative");
+    }
+    // No change for the remaining probability
+  };
+
+  // Simulate eye contact detection
+  const checkEyeContact = () => {
+    // In a real implementation, this would use eye-tracking computer vision
+    // For simulation, we'll use a weighted random approach
+    const baseScore = Math.floor(Math.random() * 40) + 50; // Base score between 50-90
+    const variationRange = 10; // How much the score can vary
+    const newScore = Math.min(100, Math.max(0, baseScore + (Math.random() * variationRange * 2 - variationRange)));
+    setEyeContactScore(newScore);
+  };
+
+  // Simulate grammar checking
+  const checkGrammar = () => {
+    // In a real implementation, this would analyze speech transcription
+    // For simulation, we'll randomly create grammar issues
+    const potentialIssues = [
+      "Using 'like' as a filler word",
+      "Subject-verb agreement error",
+      "Incorrect use of 'me and I'",
+      "Run-on sentence detected",
+      "Sentence fragment detected",
+      "Incorrect verb tense"
+    ];
+    
+    // Clear previous issues occasionally
+    if (Math.random() > 0.7) {
+      setGrammarIssues([]);
+    }
+    
+    // Add new issues occasionally
+    if (speechDetected && Math.random() > 0.8) {
+      const newIssue = potentialIssues[Math.floor(Math.random() * potentialIssues.length)];
+      if (!grammarIssues.includes(newIssue)) {
+        setGrammarIssues(prev => [...prev, newIssue]);
+      }
+    }
+  };
+
+  // Simulate confidence scoring
+  const updateConfidenceScore = () => {
+    // In a real implementation, this would analyze speech patterns, tone, and body language
+    // For simulation, we'll base it on audio level, speech duration, and a random factor
+    
+    // Higher audio level and longer speech duration typically indicate more confidence
+    const audioFactor = audioLevel / 100; // Normalize to 0-1
+    const speechFactor = Math.min(1, speechDuration / 60); // Cap at 1 minute for max score
+    const postureFactor = postureFeedback.status === "good" ? 1 : 0.7; // Good posture boosts confidence score
+    const expressionFactor = facialExpressions === "positive" ? 1.1 : 
+                              facialExpressions === "neutral" ? 1 : 0.9;
+    
+    const baseScore = 50 + (audioFactor * 15) + (speechFactor * 15) + (Math.random() * 10);
+    const finalScore = Math.min(100, Math.max(0, baseScore * postureFactor * expressionFactor));
+    
+    setConfidenceScore(finalScore);
+  };
+
+  // Posture detection simulator
   const checkPosture = () => {
-    // Simulate posture detection with random changes
-    // This would be replaced with actual computer vision in a real app
-    if (Math.random() > 0.8) {
-      const postures = ["good", "slouching", "tooClose", "tooFar"];
-      const randomIndex = Math.floor(Math.random() * postures.length);
-      const newPosture = postures[randomIndex];
+    // In a real app, this would use computer vision AI
+    // For simulation, we'll weight toward good posture but with occasional issues
+    const postureRoll = Math.random();
+    
+    let newPostureStatus = postureFeedback.status;
+    
+    // 60% chance of good posture
+    if (postureRoll > 0.4) {
+      newPostureStatus = "good";
+    } else if (postureRoll > 0.25) {
+      newPostureStatus = "slouching";
+    } else if (postureRoll > 0.1) {
+      newPostureStatus = "tooClose";
+    } else {
+      newPostureStatus = "tooFar";
+    }
+    
+    if (newPostureStatus !== postureFeedback.status) {
+      setPostureFeedback({
+        status: newPostureStatus as "good" | "slouching" | "tooClose" | "tooFar",
+        lastChecked: Date.now()
+      });
       
-      if (newPosture !== postureFeedback.status) {
-        setPostureFeedback({
-          status: newPosture as "good" | "slouching" | "tooClose" | "tooFar",
-          lastChecked: Date.now()
-        });
+      // If bad posture is detected, give feedback
+      if (newPostureStatus !== "good" && Date.now() - postureFeedback.lastChecked > 5000) {
+        const feedback = {
+          slouching: "Try sitting up straighter to appear more confident.",
+          tooClose: "You're a bit too close to the camera.",
+          tooFar: "Move a bit closer to be more visible."
+        }[newPostureStatus];
         
-        // If bad posture is detected, give feedback
-        if (newPosture !== "good" && Date.now() - postureFeedback.lastChecked > 5000) {
-          const feedback = {
-            slouching: "Try sitting up straighter to appear more confident.",
-            tooClose: "You're a bit too close to the camera.",
-            tooFar: "Move a bit closer to be more visible."
-          }[newPosture];
-          
-          if (feedback) {
-            toast({
-              title: "Posture Tip",
-              description: feedback,
-            });
-          }
+        if (feedback) {
+          toast({
+            title: "Posture Tip",
+            description: feedback,
+          });
         }
       }
     }
@@ -128,12 +226,12 @@ const PracticeInterview = () => {
       const dataArray = new Uint8Array(bufferLength);
       dataArrayRef.current = dataArray;
       
-      // Start audio level monitoring
-      const checkAudioInterval = setInterval(() => {
-        if (recordingState === "recording" && analyser && dataArray) {
+      // Start audio level monitoring with higher sensitivity
+      const audioMonitoringInterval = setInterval(() => {
+        if (analyser && dataArray) {
           analyser.getByteFrequencyData(dataArray);
           
-          // Calculate audio level (basic average of frequency values)
+          // Calculate audio level with improved sensitivity
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) {
             sum += dataArray[i];
@@ -141,8 +239,8 @@ const PracticeInterview = () => {
           const avg = sum / dataArray.length;
           setAudioLevel(avg);
           
-          // If average is above threshold, consider speech detected
-          if (avg > 15) { // Adjust this threshold based on testing
+          // Lower threshold for speech detection
+          if (avg > 8) { // Reduced threshold for better sensitivity
             setSpeechDetected(true);
             setSpeechDuration(prev => prev + 0.1); // Increment speech duration (100ms interval)
             
@@ -152,7 +250,6 @@ const PracticeInterview = () => {
             }
           } else if (speechDetected) {
             // If silence is detected after speech, wait a bit before changing state
-            // This helps prevent flickering for brief pauses
             if (!silenceTimer.current) {
               silenceTimer.current = window.setTimeout(() => {
                 // We don't set speechDetected to false here because we want to
@@ -163,12 +260,7 @@ const PracticeInterview = () => {
         }
       }, 100);
       
-      // Start posture detection simulation
-      postureCheckInterval.current = window.setInterval(() => {
-        if (recordingState === "recording") {
-          checkPosture();
-        }
-      }, 3000);
+      setAudioAnalysisInterval(audioMonitoringInterval);
       
       return mediaStream;
     } catch (err) {
@@ -186,6 +278,7 @@ const PracticeInterview = () => {
     setIsCountingDown(true);
     setSpeechDetected(false);
     setSpeechDuration(0);
+    setGrammarIssues([]);
     
     setTimeout(() => {
       setIsCountingDown(false);
@@ -227,15 +320,20 @@ const PracticeInterview = () => {
       setRecordedChunks(chunks);
       setRecordingState("processing");
       
-      // Store speech detection result in session storage for analysis page
-      // Include additional data for more accurate analysis
+      // Enhanced data collection for more accurate analysis
       sessionStorage.setItem('interviewData', JSON.stringify({
         timestamp: new Date().toISOString(),
         hasSpokenContent: speechDetected,
         recordingDuration: recordingTime,
         speechDuration: speechDuration,
         speechPercentage: recordingTime > 0 ? Math.min(100, (speechDuration / recordingTime) * 100) : 0,
-        postureFeedback: postureFeedback.status
+        postureFeedback: postureFeedback.status,
+        eyeContactScore: eyeContactScore,
+        confidenceScore: confidenceScore,
+        facialExpressions: facialExpressions,
+        grammarIssues: grammarIssues.length,
+        interviewType: interviewType,
+        questionsAnswered: currentQuestionIndex + 1
       }));
       
       setTimeout(() => {
@@ -247,6 +345,24 @@ const PracticeInterview = () => {
     timerRef.current = window.setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
+    
+    // Start analysis intervals
+    postureCheckInterval.current = window.setInterval(() => {
+      checkPosture();
+      updateConfidenceScore(); // Update confidence regularly
+    }, 2000);
+    
+    expressionCheckInterval.current = window.setInterval(() => {
+      checkFacialExpression();
+    }, 3000);
+    
+    eyeContactCheckInterval.current = window.setInterval(() => {
+      checkEyeContact();
+    }, 2500);
+    
+    grammarCheckInterval.current = window.setInterval(() => {
+      checkGrammar();
+    }, 4000);
     
     mediaRecorder.start();
   };
@@ -269,11 +385,31 @@ const PracticeInterview = () => {
         clearInterval(postureCheckInterval.current);
         postureCheckInterval.current = null;
       }
+      
+      if (expressionCheckInterval.current) {
+        clearInterval(expressionCheckInterval.current);
+        expressionCheckInterval.current = null;
+      }
+      
+      if (eyeContactCheckInterval.current) {
+        clearInterval(eyeContactCheckInterval.current);
+        eyeContactCheckInterval.current = null;
+      }
+      
+      if (grammarCheckInterval.current) {
+        clearInterval(grammarCheckInterval.current);
+        grammarCheckInterval.current = null;
+      }
+      
+      if (audioAnalysisInterval) {
+        clearInterval(audioAnalysisInterval);
+        setAudioAnalysisInterval(null);
+      }
     }
   };
 
   const processRecording = () => {
-    // For demo purposes, just navigate to a random analysis ID
+    // Generate a random analysis ID and navigate to the analysis page
     const analysisId = Math.floor(Math.random() * 1000000);
     navigate(`/analysis/${analysisId}`);
   };
@@ -310,6 +446,23 @@ const PracticeInterview = () => {
       tooClose: "bg-amber-500",
       tooFar: "bg-amber-500"
     }[postureFeedback.status];
+    
+    return { text: statusText, color: statusColor };
+  };
+  
+  // Get facial expression status
+  const getExpressionStatus = () => {
+    const statusText = {
+      positive: "Positive expression",
+      neutral: "Neutral expression",
+      negative: "Negative expression"
+    }[facialExpressions];
+    
+    const statusColor = {
+      positive: "bg-green-500",
+      neutral: "bg-blue-500",
+      negative: "bg-amber-500"
+    }[facialExpressions];
     
     return { text: statusText, color: statusColor };
   };
@@ -355,7 +508,7 @@ const PracticeInterview = () => {
                         <div 
                           key={i}
                           className={`h-3 w-1 rounded-full ${
-                            audioLevel > i * 10 ? 'bg-green-500' : 'bg-gray-500'
+                            audioLevel > i * 8 ? 'bg-green-500' : 'bg-gray-500'
                           }`}
                         ></div>
                       ))}
@@ -363,11 +516,40 @@ const PracticeInterview = () => {
                     <span>{speechDetected ? 'Voice detected' : 'Silence'}</span>
                   </div>
                   
-                  {/* Posture indicator */}
-                  <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
-                    <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
-                    <span>{getPostureStatus().text}</span>
+                  {/* Performance indicators */}
+                  <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                    {/* Posture indicator */}
+                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                      <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
+                      <span>{getPostureStatus().text}</span>
+                    </div>
+                    
+                    {/* Expression indicator */}
+                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                      <span className={`h-2 w-2 rounded-full ${getExpressionStatus().color}`}></span>
+                      <span>{getExpressionStatus().text}</span>
+                    </div>
+                    
+                    {/* Eye contact indicator */}
+                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                      <span className={`h-2 w-2 rounded-full ${eyeContactScore > 70 ? 'bg-green-500' : eyeContactScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                      <span>Eye contact: {Math.round(eyeContactScore)}%</span>
+                    </div>
+                    
+                    {/* Confidence indicator */}
+                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                      <span className={`h-2 w-2 rounded-full ${confidenceScore > 70 ? 'bg-green-500' : confidenceScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                      <span>Confidence: {Math.round(confidenceScore)}%</span>
+                    </div>
                   </div>
+                  
+                  {/* Grammar issues notification */}
+                  {grammarIssues.length > 0 && (
+                    <div className="absolute bottom-4 left-4 bg-black/50 text-white py-1 px-3 rounded-full text-sm flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                      <span>Grammar issues: {grammarIssues.length}</span>
+                    </div>
+                  )}
                 </>
               )}
               
@@ -451,23 +633,23 @@ const PracticeInterview = () => {
                 )}
                 
                 <div className="space-y-2 text-sm text-neutral-500">
-                  <h4 className="font-medium">Tips:</h4>
+                  <h4 className="font-medium">How You're Being Analyzed:</h4>
                   <ul className="space-y-2">
                     <li className="flex gap-2 items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Make sure you're in a quiet environment with good lighting</span>
+                      <span>Verbal analysis: Speech clarity, grammar, filler words</span>
                     </li>
                     <li className="flex gap-2 items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Position yourself so your face is clearly visible</span>
+                      <span>Visual analysis: Eye contact, posture, facial expressions</span>
                     </li>
                     <li className="flex gap-2 items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Speak clearly and maintain eye contact with the camera</span>
+                      <span>Content analysis: Relevance, structure, completeness</span>
                     </li>
                     <li className="flex gap-2 items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Use the STAR method for behavioral questions (Situation, Task, Action, Result)</span>
+                      <span>Overall impression: Confidence, engagement, professionalism</span>
                     </li>
                   </ul>
                 </div>
