@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,18 +26,17 @@ const PracticeInterview = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [speechDuration, setSpeechDuration] = useState(0);
   const [postureFeedback, setPostureFeedback] = useState({
-    status: "good", // "good", "slouching", "tooClose", "tooFar"
+    status: "good",
     lastChecked: Date.now()
   });
   const [eyeContactScore, setEyeContactScore] = useState(0);
   const [confidenceScore, setConfidenceScore] = useState(0);
   const [grammarIssues, setGrammarIssues] = useState<string[]>([]);
-  const [facialExpressions, setFacialExpressions] = useState("neutral"); // "neutral", "positive", "negative"
+  const [facialExpressions, setFacialExpressions] = useState("neutral");
   const [audioAnalysisInterval, setAudioAnalysisInterval] = useState<number | null>(null);
   const [currentInterviewer, setCurrentInterviewer] = useState<string>("general");
   const [interviewerSpeaking, setInterviewerSpeaking] = useState(false);
-  
-  // We need to use NodeJS.Timeout for the silenceTimer to match setTimeout's return type
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<number | null>(null);
@@ -49,26 +47,38 @@ const PracticeInterview = () => {
   const expressionCheckInterval = useRef<number | null>(null);
   const eyeContactCheckInterval = useRef<number | null>(null);
   const grammarCheckInterval = useRef<number | null>(null);
-  
+
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const questions = interviewQuestions[interviewType as keyof typeof interviewQuestions] || [];
   const currentQuestion = questions[currentQuestionIndex];
   const interviewer = interviewerDetails[interviewType as keyof typeof interviewerDetails];
-  
+
   const handleRecordingComplete = (recordedBlob: Blob) => {
-    // Store interview recording data 
+    console.log("PracticeInterview: Recording complete, blob size:", recordedBlob.size);
+    
     const recordingUrl = URL.createObjectURL(recordedBlob);
     localStorage.setItem('latestInterviewRecording', recordingUrl);
     
-    // Store metadata in session storage
-    sessionStorage.setItem('interviewMetadata', JSON.stringify({
+    const interviewData = {
       timestamp: new Date().toISOString(),
       duration: recordingTime,
       interviewType: interviewType,
-      interviewer: interviewer?.name
-    }));
+      interviewer: interviewer?.name,
+      recordingDuration: recordingTime,
+      speechPercentage: Math.min(100, (speechDuration / recordingTime) * 100),
+      speechDuration: speechDuration,
+      postureFeedback: postureFeedback.status,
+      eyeContactScore: eyeContactScore,
+      confidenceScore: confidenceScore,
+      facialExpressions: facialExpressions,
+      grammarIssues: grammarIssues.length,
+      hasSpokenContent: speechDetected
+    };
+    
+    console.log("PracticeInterview: Saving analysis data:", interviewData);
+    sessionStorage.setItem('interviewData', JSON.stringify(interviewData));
     
     setRecordingState("processing");
     setTimeout(() => {
@@ -76,7 +86,6 @@ const PracticeInterview = () => {
     }, 2000);
   };
 
-  // Clean up resources when component unmounts
   useEffect(() => {
     return () => {
       if (stream) {
@@ -109,22 +118,18 @@ const PracticeInterview = () => {
     };
   }, [stream, audioContext, audioAnalysisInterval]);
 
-  // Enhanced function to make the AI interviewer speak the current question with animations
   const speakCurrentQuestion = () => {
     if (recordingState === "recording") {
       setInterviewerSpeaking(true);
       
-      // Simulate AI speaking by setting a timeout
       setTimeout(() => {
         setInterviewerSpeaking(false);
       }, 4000);
       
-      // This is where you would integrate a text-to-speech API in a real implementation
       console.log("AI interviewer speaking:", currentQuestion);
     }
   };
-  
-  // Function to get the interviewer image based on interview type
+
   const getInterviewerImage = () => {
     switch(interviewType) {
       case "technical":
@@ -137,10 +142,7 @@ const PracticeInterview = () => {
     }
   };
 
-  // Simulate facial expression detection
   const checkFacialExpression = () => {
-    // In a real implementation, this would use computer vision AI
-    // For simulation, we'll randomly transition between expressions with a bias toward positive
     const expressionRoll = Math.random();
     if (expressionRoll > 0.7) {
       setFacialExpressions("positive");
@@ -149,23 +151,16 @@ const PracticeInterview = () => {
     } else if (expressionRoll > 0.35) {
       setFacialExpressions("negative");
     }
-    // No change for the remaining probability
   };
 
-  // Simulate eye contact detection
   const checkEyeContact = () => {
-    // In a real implementation, this would use eye-tracking computer vision
-    // For simulation, we'll use a weighted random approach
-    const baseScore = Math.floor(Math.random() * 40) + 50; // Base score between 50-90
-    const variationRange = 10; // How much the score can vary
+    const baseScore = Math.floor(Math.random() * 40) + 50;
+    const variationRange = 10;
     const newScore = Math.min(100, Math.max(0, baseScore + (Math.random() * variationRange * 2 - variationRange)));
     setEyeContactScore(newScore);
   };
 
-  // Simulate grammar checking
   const checkGrammar = () => {
-    // In a real implementation, this would analyze speech transcription
-    // For simulation, we'll randomly create grammar issues
     const potentialIssues = [
       "Using 'like' as a filler word",
       "Subject-verb agreement error",
@@ -175,12 +170,10 @@ const PracticeInterview = () => {
       "Incorrect verb tense"
     ];
     
-    // Clear previous issues occasionally
     if (Math.random() > 0.7) {
       setGrammarIssues([]);
     }
     
-    // Add new issues occasionally
     if (speechDetected && Math.random() > 0.8) {
       const newIssue = potentialIssues[Math.floor(Math.random() * potentialIssues.length)];
       if (!grammarIssues.includes(newIssue)) {
@@ -189,15 +182,10 @@ const PracticeInterview = () => {
     }
   };
 
-  // Simulate confidence scoring
   const updateConfidenceScore = () => {
-    // In a real implementation, this would analyze speech patterns, tone, and body language
-    // For simulation, we'll base it on audio level, speech duration, and a random factor
-    
-    // Higher audio level and longer speech duration typically indicate more confidence
-    const audioFactor = audioLevel / 100; // Normalize to 0-1
-    const speechFactor = Math.min(1, speechDuration / 60); // Cap at 1 minute for max score
-    const postureFactor = postureFeedback.status === "good" ? 1 : 0.7; // Good posture boosts confidence score
+    const audioFactor = audioLevel / 100;
+    const speechFactor = Math.min(1, speechDuration / 60);
+    const postureFactor = postureFeedback.status === "good" ? 1 : 0.7;
     const expressionFactor = facialExpressions === "positive" ? 1.1 : 
                               facialExpressions === "neutral" ? 1 : 0.9;
     
@@ -207,15 +195,11 @@ const PracticeInterview = () => {
     setConfidenceScore(finalScore);
   };
 
-  // Posture detection simulator
   const checkPosture = () => {
-    // In a real app, this would use computer vision AI
-    // For simulation, we'll weight toward good posture but with occasional issues
     const postureRoll = Math.random();
     
     let newPostureStatus = postureFeedback.status;
     
-    // 60% chance of good posture
     if (postureRoll > 0.4) {
       newPostureStatus = "good";
     } else if (postureRoll > 0.25) {
@@ -232,7 +216,6 @@ const PracticeInterview = () => {
         lastChecked: Date.now()
       });
       
-      // If bad posture is detected, give feedback
       if (newPostureStatus !== "good" && Date.now() - postureFeedback.lastChecked > 5000) {
         const feedback = {
           slouching: "Try sitting up straighter to appear more confident.",
@@ -255,10 +238,9 @@ const PracticeInterview = () => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
         audio: {
-          // Improved audio settings for better sensitivity
           echoCancellation: true,
-          noiseSuppression: false, // Disable noise suppression to improve speech detection
-          autoGainControl: true,   // Enable auto gain to boost quiet sounds
+          noiseSuppression: false,
+          autoGainControl: true
         }
       });
       
@@ -268,16 +250,15 @@ const PracticeInterview = () => {
         videoRef.current.srcObject = mediaStream;
       }
       
-      // Setup audio analysis with improved sensitivity
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       setAudioContext(audioCtx);
       
       const analyser = audioCtx.createAnalyser();
       audioAnalyserRef.current = analyser;
       analyser.fftSize = 256;
-      analyser.minDecibels = -90;  // Increase sensitivity (default is -100)
-      analyser.maxDecibels = -10;  // Increase sensitivity (default is -30)
-      analyser.smoothingTimeConstant = 0.5;  // Less smoothing for faster response
+      analyser.minDecibels = -90;
+      analyser.maxDecibels = -10;
+      analyser.smoothingTimeConstant = 0.5;
       
       const audioSource = audioCtx.createMediaStreamSource(mediaStream);
       audioSource.connect(analyser);
@@ -286,12 +267,10 @@ const PracticeInterview = () => {
       const dataArray = new Uint8Array(bufferLength);
       dataArrayRef.current = dataArray;
       
-      // Start audio level monitoring with higher sensitivity
       const audioMonitoringInterval = window.setInterval(() => {
         if (analyser && dataArray) {
           analyser.getByteFrequencyData(dataArray);
           
-          // Calculate audio level with improved sensitivity
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) {
             sum += dataArray[i];
@@ -299,21 +278,17 @@ const PracticeInterview = () => {
           const avg = sum / dataArray.length;
           setAudioLevel(avg);
           
-          // Lower threshold for speech detection (more sensitive)
-          if (avg > 5) { // Very reduced threshold for better sensitivity
+          if (avg > 5) {
             setSpeechDetected(true);
-            setSpeechDuration(prev => prev + 0.1); // Increment speech duration (100ms interval)
+            setSpeechDuration(prev => prev + 0.1);
             
             if (silenceTimer.current) {
               clearTimeout(silenceTimer.current);
               silenceTimer.current = null;
             }
           } else if (speechDetected) {
-            // If silence is detected after speech, wait a bit before changing state
             if (!silenceTimer.current) {
               silenceTimer.current = setTimeout(() => {
-                // We don't set speechDetected to false here because we want to
-                // track if speech was ever detected during the interview
                 console.log("Silence detected after speech");
               }, 1500);
             }
@@ -351,15 +326,13 @@ const PracticeInterview = () => {
     setRecordingState("recording");
     setRecordingTime(0);
     
-    // Start the recording timer
     timerRef.current = window.setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
     
-    // Start analysis intervals
     postureCheckInterval.current = window.setInterval(() => {
       checkPosture();
-      updateConfidenceScore(); // Update confidence regularly
+      updateConfidenceScore();
     }, 2000);
     
     expressionCheckInterval.current = window.setInterval(() => {
@@ -374,7 +347,6 @@ const PracticeInterview = () => {
       checkGrammar();
     }, 4000);
     
-    // Start the AI interviewer after a short delay
     setTimeout(() => {
       speakCurrentQuestion();
     }, 1000);
@@ -422,7 +394,6 @@ const PracticeInterview = () => {
   };
 
   const processRecording = () => {
-    // Generate a random analysis ID and navigate to the analysis page
     const analysisId = Math.floor(Math.random() * 1000000);
     navigate(`/analysis/${analysisId}`);
   };
@@ -431,7 +402,6 @@ const PracticeInterview = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       
-      // Make the AI interviewer ask the next question
       setTimeout(() => {
         speakCurrentQuestion();
       }, 1000);
@@ -449,7 +419,6 @@ const PracticeInterview = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Get posture status text and color
   const getPostureStatus = () => {
     const statusText = {
       good: "Good posture",
@@ -467,8 +436,7 @@ const PracticeInterview = () => {
     
     return { text: statusText, color: statusColor };
   };
-  
-  // Get facial expression status
+
   const getExpressionStatus = () => {
     const statusText = {
       positive: "Positive expression",
@@ -497,14 +465,12 @@ const PracticeInterview = () => {
           <div className="lg:col-span-2">
             <Card className="p-6 border border-neutral-200 dark:border-neutral-800 relative overflow-hidden">
               {recordingState === "countdown" && (
-                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
+                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
                   <CountdownTimer seconds={3} onComplete={() => {}} />
                 </div>
               )}
               
-              {/* AI Interviewer and Video Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* AI Interviewer with enhanced lifelike animations */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
                   <motion.div 
                     className="w-full h-full"
@@ -523,7 +489,6 @@ const PracticeInterview = () => {
                       className="w-full h-full object-cover"
                     />
                     
-                    {/* Subtle breathing animation for interviewer */}
                     <motion.div 
                       className="absolute inset-0"
                       animate={{ 
@@ -538,22 +503,19 @@ const PracticeInterview = () => {
                     />
                   </motion.div>
                   
-                  {/* Interviewer info overlay */}
-                  <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm">
+                  <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm z-10">
                     {interviewer?.name} - {interviewer?.title}
                   </div>
                   
-                  {/* Enhanced talking animation with facial expressions */}
                   <AnimatePresence>
                     {interviewerSpeaking && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4"
+                        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4 z-20"
                       >
                         <div className="flex flex-col items-center gap-3">
-                          {/* Animated waveform for talking - more dynamic now */}
                           <div className="flex items-center gap-1 h-4 mb-2">
                             {[...Array(7)].map((_, i) => (
                               <motion.div 
@@ -571,7 +533,6 @@ const PracticeInterview = () => {
                             ))}
                           </div>
                           
-                          {/* Question being spoken with typing animation */}
                           <motion.p 
                             className="text-white text-sm sm:text-base font-medium text-center"
                             initial={{ opacity: 0 }}
@@ -586,34 +547,36 @@ const PracticeInterview = () => {
                   </AnimatePresence>
                 </div>
                 
-                {/* User Video with recording functionality */}
-                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden">
+                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
                   {recordingState === "idle" ? (
                     <VideoPlayer
                       videoUrl=""
                       onRecordingComplete={handleRecordingComplete}
                     />
                   ) : (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover"
-                    ></video>
+                    <>
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                      ></video>
+                      
+                      {recordingState === "recording" && (
+                        <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
+                          <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                          <span>Recording {formatTime(recordingTime)}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
               
               {recordingState === "recording" && (
-                <>
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm">
-                    <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
-                    <span>Recording {formatTime(recordingTime)}</span>
-                  </div>
-                  
-                  {/* Audio level indicator - more visible now */}
-                  <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
                     <div className="flex gap-1 items-center">
                       {[...Array(5)].map((_, i) => (
                         <div 
@@ -627,45 +590,37 @@ const PracticeInterview = () => {
                     <span>{speechDetected ? 'Voice detected' : 'Silence'}</span>
                   </div>
                   
-                  {/* Performance indicators */}
-                  <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                    {/* Posture indicator */}
-                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
-                      <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
-                      <span>{getPostureStatus().text}</span>
-                    </div>
-                    
-                    {/* Expression indicator */}
-                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
-                      <span className={`h-2 w-2 rounded-full ${getExpressionStatus().color}`}></span>
-                      <span>{getExpressionStatus().text}</span>
-                    </div>
-                    
-                    {/* Eye contact indicator */}
-                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
-                      <span className={`h-2 w-2 rounded-full ${eyeContactScore > 70 ? 'bg-green-500' : eyeContactScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
-                      <span>Eye contact: {Math.round(eyeContactScore)}%</span>
-                    </div>
-                    
-                    {/* Confidence indicator */}
-                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
-                      <span className={`h-2 w-2 rounded-full ${confidenceScore > 70 ? 'bg-green-500' : confidenceScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
-                      <span>Confidence: {Math.round(confidenceScore)}%</span>
-                    </div>
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                    <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
+                    <span>{getPostureStatus().text}</span>
                   </div>
                   
-                  {/* Grammar issues notification */}
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                    <span className={`h-2 w-2 rounded-full ${getExpressionStatus().color}`}></span>
+                    <span>{getExpressionStatus().text}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                    <span className={`h-2 w-2 rounded-full ${eyeContactScore > 70 ? 'bg-green-500' : eyeContactScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span>Eye contact: {Math.round(eyeContactScore)}%</span>
+                  </div>
+                  
+                  <div className="col-span-2 flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                    <span className={`h-2 w-2 rounded-full ${confidenceScore > 70 ? 'bg-green-500' : confidenceScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span>Confidence: {Math.round(confidenceScore)}%</span>
+                  </div>
+                  
                   {grammarIssues.length > 0 && (
-                    <div className="absolute bottom-4 left-4 bg-black/70 text-white py-1 px-3 rounded-full text-sm flex items-center gap-2">
+                    <div className="col-span-2 flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
                       <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                       <span>Grammar issues: {grammarIssues.length}</span>
                     </div>
                   )}
-                </>
+                </div>
               )}
               
               {recordingState === "processing" && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10">
+                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
                   <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
                   <p className="text-white">Processing your interview...</p>
                 </div>
@@ -739,7 +694,6 @@ const PracticeInterview = () => {
                   </Select>
                 </div>
                 
-                {/* Display interviewer information */}
                 <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
                   <h4 className="text-sm font-medium mb-2">Your Interviewer</h4>
                   <div className="flex flex-col gap-2">

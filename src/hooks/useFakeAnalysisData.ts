@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AnalysisData } from "@/types/analysis";
 
@@ -9,17 +8,21 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
   useEffect(() => {
     // Simulate API call delay
     const timer = setTimeout(() => {
+      console.log("useFakeAnalysisData: Generating analysis data");
+      
       // Get additional data from sessionStorage if available
       let sessionData = null;
       try {
         const storedData = sessionStorage.getItem('interviewData');
         if (storedData) {
           sessionData = JSON.parse(storedData);
-          console.log("Retrieved session data:", sessionData);
+          console.log("useFakeAnalysisData: Retrieved session data:", sessionData);
           hasContent = sessionData.hasSpokenContent; // Use actual speech detection
+        } else {
+          console.log("useFakeAnalysisData: No interview data found in session storage");
         }
       } catch (e) {
-        console.error("Error parsing session data:", e);
+        console.error("useFakeAnalysisData: Error parsing session data:", e);
       }
       
       // Determine recording duration - influences feedback on conciseness
@@ -305,6 +308,7 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
           }
         });
       }
+      console.log("useFakeAnalysisData: Analysis complete, setting data with hasContent:", hasContent);
       setIsLoading(false);
     }, 3000);
     
