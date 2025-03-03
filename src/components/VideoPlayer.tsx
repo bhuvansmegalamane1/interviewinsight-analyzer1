@@ -3,17 +3,52 @@ import { useState, useRef, useEffect } from "react";
 
 interface VideoPlayerProps {
   videoUrl: string;
+  onRecordingComplete?: (recordedBlob: Blob) => void;
+  isRecording?: boolean;
+  autoStart?: boolean;
 }
 
-const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+const VideoPlayer = ({ 
+  videoUrl, 
+  onRecordingComplete, 
+  isRecording = false, 
+  autoStart = false 
+}: VideoPlayerProps) => {
+  const [isPlaying, setIsPlaying] = useState(autoStart);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [showControls, setShowControls] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const [recording, setRecording] = useState(isRecording);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   
+  // Initialize recording if isRecording prop is true
+  useEffect(() => {
+    setRecording(isRecording);
+    
+    if (isRecording && !mediaRecorder) {
+      startRecording();
+    } else if (!isRecording && mediaRecorder) {
+      stopRecording();
+    }
+  }, [isRecording]);
+  
+  // Auto start playback if specified
+  useEffect(() => {
+    if (autoStart && videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.error("Error auto-starting video:", error);
+      });
+      setIsPlaying(true);
+    }
+  }, [autoStart]);
+  
+  // Handle control visibility
   useEffect(() => {
     // Auto hide controls after inactivity
     const handleMouseMove = () => {
@@ -37,8 +72,98 @@ const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
+      
+      // Clean up recording resources
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
   }, [isPlaying]);
+  
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: false,
+          autoGainControl: true
+        } 
+      });
+      
+      streamRef.current = stream;
+      
+      // Set the video source to the camera stream for recording
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.muted = true; // Prevent feedback
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+      
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9,opus'
+      });
+      
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e: BlobEvent) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const recordedBlob = new Blob(chunks, { type: 'video/webm' });
+        
+        // Store in local storage (using URL)
+        const videoUrl = URL.createObjectURL(recordedBlob);
+        localStorage.setItem('latestInterviewRecording', videoUrl);
+        
+        // Store the actual blob in sessionStorage (for analysis)
+        sessionStorage.setItem('interviewRecordingData', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          blobType: recordedBlob.type,
+          size: recordedBlob.size
+        }));
+        
+        // Call the callback if provided
+        if (onRecordingComplete) {
+          onRecordingComplete(recordedBlob);
+        }
+        
+        // Reset recorder
+        setMediaRecorder(null);
+        setRecordedChunks([]);
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start(1000); // Collect chunks every second
+      setRecording(true);
+      
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+  
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      
+      // Stop all tracks from the stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      
+      setRecording(false);
+      
+      // Reset video source to the original video URL
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.src = videoUrl;
+        videoRef.current.muted = false;
+      }
+    }
+  };
   
   const togglePlay = () => {
     if (videoRef.current) {
@@ -104,8 +229,16 @@ const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
         onEnded={handleVideoEnd}
       />
       
+      {/* Recording indicator */}
+      {recording && (
+        <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm">
+          <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+          <span>Recording</span>
+        </div>
+      )}
+      
       {/* Large play button overlay - always visible when paused */}
-      {!isPlaying && (
+      {!isPlaying && !recording && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
           <button 
             onClick={togglePlay}
@@ -143,6 +276,7 @@ const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
               <button 
                 onClick={togglePlay}
                 className="text-white hover:text-white/80 transition-colors"
+                disabled={recording}
               >
                 {isPlaying ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -155,6 +289,34 @@ const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
                   </svg>
                 )}
               </button>
+              
+              {/* Recording button */}
+              {onRecordingComplete && !recording && (
+                <button
+                  onClick={startRecording}
+                  className="text-white hover:text-white/80 transition-colors flex items-center gap-1"
+                  title="Start Recording"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" fill="#ef4444" />
+                  </svg>
+                  <span className="text-xs">REC</span>
+                </button>
+              )}
+              
+              {/* Stop recording button */}
+              {onRecordingComplete && recording && (
+                <button
+                  onClick={stopRecording}
+                  className="text-white hover:text-white/80 transition-colors flex items-center gap-1"
+                  title="Stop Recording"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="6" y="6" width="12" height="12" />
+                  </svg>
+                  <span className="text-xs">STOP</span>
+                </button>
+              )}
               
               {/* Volume control */}
               <div className="flex items-center gap-2">
@@ -189,8 +351,6 @@ const VideoPlayer = ({ videoUrl }: VideoPlayerProps) => {
                 />
               </div>
             </div>
-            
-            {/* Full screen button could be added here in the future */}
           </div>
         </div>
       </div>

@@ -1,9 +1,9 @@
-
+<lov-code>
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +15,6 @@ import VideoPlayer from "@/components/VideoPlayer";
 type RecordingState = "idle" | "countdown" | "recording" | "processing";
 
 const PracticeInterview = () => {
-  
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [interviewType, setInterviewType] = useState("general");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -57,6 +56,25 @@ const PracticeInterview = () => {
   const questions = interviewQuestions[interviewType as keyof typeof interviewQuestions] || [];
   const currentQuestion = questions[currentQuestionIndex];
   const interviewer = interviewerDetails[interviewType as keyof typeof interviewerDetails];
+  
+  const handleRecordingComplete = (recordedBlob: Blob) => {
+    // Store interview recording data 
+    const recordingUrl = URL.createObjectURL(recordedBlob);
+    localStorage.setItem('latestInterviewRecording', recordingUrl);
+    
+    // Store metadata in session storage
+    sessionStorage.setItem('interviewMetadata', JSON.stringify({
+      timestamp: new Date().toISOString(),
+      duration: recordingTime,
+      interviewType: interviewType,
+      interviewer: interviewer?.name
+    }));
+    
+    setRecordingState("processing");
+    setTimeout(() => {
+      processRecording();
+    }, 2000);
+  };
 
   // Clean up resources when component unmounts
   useEffect(() => {
@@ -91,7 +109,7 @@ const PracticeInterview = () => {
     };
   }, [stream, audioContext, audioAnalysisInterval]);
 
-  // Function to make the AI interviewer speak the current question
+  // Enhanced function to make the AI interviewer speak the current question with animations
   const speakCurrentQuestion = () => {
     if (recordingState === "recording") {
       setInterviewerSpeaking(true);
@@ -330,59 +348,8 @@ const PracticeInterview = () => {
   };
 
   const beginRecording = async () => {
-    // If we don't have a stream yet, request it
-    let mediaStream = stream;
-    if (!mediaStream) {
-      mediaStream = await requestCameraPermission();
-    }
-    
-    // Check if mediaStream is valid (not null)
-    if (!mediaStream) {
-      toast({
-        title: "Camera access failed",
-        description: "Could not access camera and microphone.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setRecordingState("recording");
     setRecordingTime(0);
-    
-    const mediaRecorder = new MediaRecorder(mediaStream);
-    mediaRecorderRef.current = mediaRecorder;
-    
-    const chunks: Blob[] = [];
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-    
-    mediaRecorder.onstop = () => {
-      setRecordedChunks(chunks);
-      setRecordingState("processing");
-      
-      // Enhanced data collection for more accurate analysis
-      sessionStorage.setItem('interviewData', JSON.stringify({
-        timestamp: new Date().toISOString(),
-        hasSpokenContent: speechDetected,
-        recordingDuration: recordingTime,
-        speechDuration: speechDuration,
-        speechPercentage: recordingTime > 0 ? Math.min(100, (speechDuration / recordingTime) * 100) : 0,
-        postureFeedback: postureFeedback.status,
-        eyeContactScore: eyeContactScore,
-        confidenceScore: confidenceScore,
-        facialExpressions: facialExpressions,
-        grammarIssues: grammarIssues.length,
-        interviewType: interviewType,
-        questionsAnswered: currentQuestionIndex + 1
-      }));
-      
-      setTimeout(() => {
-        processRecording();
-      }, 2000);
-    };
     
     // Start the recording timer
     timerRef.current = window.setInterval(() => {
@@ -406,8 +373,6 @@ const PracticeInterview = () => {
     grammarCheckInterval.current = window.setInterval(() => {
       checkGrammar();
     }, 4000);
-    
-    mediaRecorder.start();
     
     // Start the AI interviewer after a short delay
     setTimeout(() => {
@@ -539,55 +504,104 @@ const PracticeInterview = () => {
               
               {/* AI Interviewer and Video Grid */}
               <div className="grid grid-cols-2 gap-4">
-                {/* AI Interviewer */}
+                {/* AI Interviewer with enhanced lifelike animations */}
                 <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
-                  <img 
-                    src={getInterviewerImage()} 
-                    alt="AI Interviewer" 
-                    className="w-full h-full object-cover"
-                  />
+                  <motion.div 
+                    className="w-full h-full"
+                    animate={{ 
+                      scale: interviewerSpeaking ? [1, 1.02, 1] : 1,
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: interviewerSpeaking ? Infinity : 0,
+                      repeatType: "mirror" 
+                    }}
+                  >
+                    <img 
+                      src={getInterviewerImage()} 
+                      alt="AI Interviewer" 
+                      className="w-full h-full object-cover"
+                    />
+                    
+                    {/* Subtle breathing animation for interviewer */}
+                    <motion.div 
+                      className="absolute inset-0"
+                      animate={{ 
+                        y: [0, 2, 0],
+                      }}
+                      transition={{ 
+                        duration: 4, 
+                        repeat: Infinity,
+                        repeatType: "mirror",
+                        ease: "easeInOut" 
+                      }}
+                    />
+                  </motion.div>
                   
                   {/* Interviewer info overlay */}
                   <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm">
                     {interviewer?.name} - {interviewer?.title}
                   </div>
                   
-                  {/* Talking animation */}
-                  {interviewerSpeaking && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4">
-                      <div className="flex flex-col items-center gap-3">
-                        {/* Animated waveform for talking */}
-                        <div className="flex items-center gap-1 h-3 mb-2">
-                          {[...Array(5)].map((_, i) => (
-                            <div 
-                              key={i}
-                              className="bg-white w-1 rounded-full animate-pulse"
-                              style={{
-                                height: `${Math.random() * 10 + 5}px`,
-                                animationDuration: `${0.8 + Math.random() * 0.6}s`
-                              }}
-                            ></div>
-                          ))}
+                  {/* Enhanced talking animation with facial expressions */}
+                  <AnimatePresence>
+                    {interviewerSpeaking && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4"
+                      >
+                        <div className="flex flex-col items-center gap-3">
+                          {/* Animated waveform for talking - more dynamic now */}
+                          <div className="flex items-center gap-1 h-4 mb-2">
+                            {[...Array(7)].map((_, i) => (
+                              <motion.div 
+                                key={i}
+                                className="bg-white w-1 rounded-full"
+                                animate={{ 
+                                  height: [`${Math.random() * 5 + 3}px`, `${Math.random() * 12 + 6}px`, `${Math.random() * 5 + 3}px`] 
+                                }}
+                                transition={{ 
+                                  duration: 0.4 + Math.random() * 0.6, 
+                                  repeat: Infinity,
+                                  repeatType: "reverse"
+                                }}
+                              ></motion.div>
+                            ))}
+                          </div>
+                          
+                          {/* Question being spoken with typing animation */}
+                          <motion.p 
+                            className="text-white text-sm sm:text-base font-medium text-center"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                          >
+                            {currentQuestion}
+                          </motion.p>
                         </div>
-                        
-                        {/* Question being spoken */}
-                        <p className="text-white text-sm sm:text-base font-medium text-center">
-                          {currentQuestion}
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 
-                {/* User Video */}
+                {/* User Video with recording functionality */}
                 <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  ></video>
+                  {recordingState === "idle" ? (
+                    <VideoPlayer
+                      videoUrl=""
+                      onRecordingComplete={handleRecordingComplete}
+                    />
+                  ) : (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    ></video>
+                  )}
                 </div>
               </div>
               
@@ -759,18 +773,3 @@ const PracticeInterview = () => {
                     </li>
                     <li className="flex gap-2 items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Overall impression: Confidence, engagement, professionalism</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </motion.div>
-    </Layout>
-  );
-};
-
-export default PracticeInterview;
-
