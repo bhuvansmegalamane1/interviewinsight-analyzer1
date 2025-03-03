@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -773,3 +773,17 @@ const PracticeInterview = () => {
                     </li>
                     <li className="flex gap-2 items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                      <span>Confidence: Body language, tone, and speaking pace</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </motion.div>
+    </Layout>
+  );
+};
+
+export default PracticeInterview;
