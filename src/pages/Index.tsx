@@ -24,10 +24,10 @@ const Index = () => {
             AI-Powered Interview Analysis
           </span>
           <h2 className="text-4xl md:text-5xl font-bold mb-6 animated-gradient-text">
-            Elevate Your Interview Performance
+            Practice with AI Interviewers
           </h2>
           <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
-            Receive detailed feedback, insights, and performance scores by practicing interviews directly within our platform.
+            Meet our AI interviewers and practice your skills with real-time feedback on your body language, eye contact, grammar, and confidence.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -48,9 +48,9 @@ const Index = () => {
             <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
               <Video size={28} />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-blue-700 dark:text-blue-400 group-hover:translate-x-1 transition-transform">Live Interviews</h3>
+            <h3 className="text-xl font-semibold mb-3 text-blue-700 dark:text-blue-400 group-hover:translate-x-1 transition-transform">AI Interviewers</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Practice interviews in real-time with our AI-powered analysis that tracks your verbal and non-verbal communication skills.
+              Practice with our realistic AI interviewers who adapt to different interview types and provide personalized questions.
             </p>
           </Card>
           
@@ -58,9 +58,9 @@ const Index = () => {
             <div className="h-16 w-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
               <PieChart size={28} />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-purple-700 dark:text-purple-400 group-hover:translate-x-1 transition-transform">Comprehensive Analysis</h3>
+            <h3 className="text-xl font-semibold mb-3 text-purple-700 dark:text-purple-400 group-hover:translate-x-1 transition-transform">Real-time Analysis</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Get detailed feedback on your speech, body language, eye contact, grammar, and confidence with accurate AI analysis.
+              Get instant feedback on your speech, body language, eye contact, grammar, and confidence during the interview.
             </p>
           </Card>
           
@@ -68,9 +68,9 @@ const Index = () => {
             <div className="h-16 w-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg float-animation group-hover:scale-110 transition-transform">
               <Award size={28} />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-indigo-700 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">Actionable Insights</h3>
+            <h3 className="text-xl font-semibold mb-3 text-indigo-700 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">Personalized Coaching</h3>
             <p className="text-neutral-600 dark:text-neutral-400">
-              Receive personalized recommendations to improve your interview skills based on your specific performance patterns.
+              Receive tailored recommendations to improve your interview performance based on detailed AI analysis.
             </p>
           </Card>
         </motion.div>

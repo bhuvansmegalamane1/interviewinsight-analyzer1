@@ -1,4 +1,22 @@
 
+export const interviewerDetails = {
+  general: {
+    name: "Sarah Johnson",
+    title: "HR Director",
+    description: "Sarah is an experienced HR professional who specializes in general interviews to assess cultural fit and soft skills."
+  },
+  technical: {
+    name: "David Chen",
+    title: "Technical Lead",
+    description: "David is a senior developer who evaluates technical knowledge and problem-solving abilities."
+  },
+  behavioral: {
+    name: "Michelle Rodriguez",
+    title: "Talent Acquisition Manager",
+    description: "Michelle focuses on past experiences to predict future performance and assess how candidates handle workplace situations."
+  }
+};
+
 export const interviewQuestions = {
   general: [
     "Tell me about yourself and your background.",
@@ -18,7 +36,7 @@ export const interviewQuestions = {
     "How do you stay updated with the latest technology trends?",
     "What programming languages or technical skills are you most comfortable with?",
     "How do you approach debugging a complex issue?",
-    "Describe your experience with [specific technology mentioned in job description].",
+    "Describe your experience with the technologies mentioned in the job description.",
     "How do you ensure your code is efficient and maintainable?",
     "Have you contributed to any open-source projects?",
     "How do you approach learning a new technology quickly?",

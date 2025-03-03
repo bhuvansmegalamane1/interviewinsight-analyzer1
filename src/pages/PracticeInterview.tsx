@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,6 +13,7 @@ import { interviewQuestions } from "@/data/interviewQuestions";
 type RecordingState = "idle" | "countdown" | "recording" | "processing";
 
 const PracticeInterview = () => {
+  
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [interviewType, setInterviewType] = useState("general");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -34,13 +34,15 @@ const PracticeInterview = () => {
   const [grammarIssues, setGrammarIssues] = useState<string[]>([]);
   const [facialExpressions, setFacialExpressions] = useState("neutral"); // "neutral", "positive", "negative"
   const [audioAnalysisInterval, setAudioAnalysisInterval] = useState<number | null>(null);
+  const [currentInterviewer, setCurrentInterviewer] = useState<string>("default");
+  const [interviewerSpeaking, setInterviewerSpeaking] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<number | null>(null);
   const audioAnalyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
-  const silenceTimer = useRef<number | null>(null);
+  const silenceTimer = useRef<NodeJS.Timeout | null>(null);
   const postureCheckInterval = useRef<number | null>(null);
   const expressionCheckInterval = useRef<number | null>(null);
   const eyeContactCheckInterval = useRef<number | null>(null);
@@ -84,6 +86,34 @@ const PracticeInterview = () => {
       }
     };
   }, [stream, audioContext, audioAnalysisInterval]);
+
+  // Function to make the AI interviewer speak the current question
+  const speakCurrentQuestion = () => {
+    if (recordingState === "recording") {
+      setInterviewerSpeaking(true);
+      
+      // Simulate AI speaking by setting a timeout
+      setTimeout(() => {
+        setInterviewerSpeaking(false);
+      }, 4000);
+      
+      // This is where you would integrate a text-to-speech API in a real implementation
+      console.log("AI interviewer speaking:", currentQuestion);
+    }
+  };
+  
+  // Function to get the interviewer image based on interview type
+  const getInterviewerImage = () => {
+    switch(interviewType) {
+      case "technical":
+        return "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&auto=format&fit=crop";
+      case "behavioral":
+        return "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop";
+      case "general":
+      default:
+        return "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop";
+    }
+  };
 
   // Simulate facial expression detection
   const checkFacialExpression = () => {
@@ -365,6 +395,11 @@ const PracticeInterview = () => {
     }, 4000);
     
     mediaRecorder.start();
+    
+    // Start the AI interviewer after a short delay
+    setTimeout(() => {
+      speakCurrentQuestion();
+    }, 1000);
   };
 
   const stopRecording = () => {
@@ -417,6 +452,11 @@ const PracticeInterview = () => {
   const nextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
+      
+      // Make the AI interviewer ask the next question
+      setTimeout(() => {
+        speakCurrentQuestion();
+      }, 1000);
     } else {
       toast({
         title: "End of questions",
@@ -473,7 +513,7 @@ const PracticeInterview = () => {
         variants={fadeIn("up", 0.3)}
         initial="hidden"
         animate="show"
-        className="max-w-4xl mx-auto py-8"
+        className="max-w-5xl mx-auto py-8"
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
@@ -484,14 +524,35 @@ const PracticeInterview = () => {
                 </div>
               )}
               
-              <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                ></video>
+              {/* AI Interviewer and Video Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* AI Interviewer */}
+                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
+                  <img 
+                    src={getInterviewerImage()} 
+                    alt="AI Interviewer" 
+                    className="w-full h-full object-cover"
+                  />
+                  {interviewerSpeaking && (
+                    <div className="absolute bottom-4 left-4 right-4 bg-black/70 text-white p-2 rounded-lg text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <p>{currentQuestion}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* User Video */}
+                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  ></video>
+                </div>
               </div>
               
               {recordingState === "recording" && (
@@ -508,7 +569,7 @@ const PracticeInterview = () => {
                         <div 
                           key={i}
                           className={`h-3 w-1 rounded-full ${
-                            audioLevel > i * 8 ? 'bg-green-500' : 'bg-gray-500'
+                            audioLevel > i * 5 ? 'bg-green-500' : 'bg-gray-500'
                           }`}
                         ></div>
                       ))}
@@ -611,7 +672,10 @@ const PracticeInterview = () => {
                   <label className="text-sm text-neutral-500">Interview Type</label>
                   <Select
                     value={interviewType}
-                    onValueChange={setInterviewType}
+                    onValueChange={(value) => {
+                      setInterviewType(value);
+                      setCurrentInterviewer(value);
+                    }}
                     disabled={recordingState !== "idle"}
                   >
                     <SelectTrigger>
