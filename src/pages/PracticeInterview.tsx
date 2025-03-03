@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,7 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import CountdownTimer from "@/components/CountdownTimer";
-import { interviewQuestions } from "@/data/interviewQuestions";
+import { interviewQuestions, interviewerDetails } from "@/data/interviewQuestions";
+import VideoPlayer from "@/components/VideoPlayer";
 
 type RecordingState = "idle" | "countdown" | "recording" | "processing";
 
@@ -34,9 +36,10 @@ const PracticeInterview = () => {
   const [grammarIssues, setGrammarIssues] = useState<string[]>([]);
   const [facialExpressions, setFacialExpressions] = useState("neutral"); // "neutral", "positive", "negative"
   const [audioAnalysisInterval, setAudioAnalysisInterval] = useState<number | null>(null);
-  const [currentInterviewer, setCurrentInterviewer] = useState<string>("default");
+  const [currentInterviewer, setCurrentInterviewer] = useState<string>("general");
   const [interviewerSpeaking, setInterviewerSpeaking] = useState(false);
   
+  // We need to use NodeJS.Timeout for the silenceTimer to match setTimeout's return type
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<number | null>(null);
@@ -53,6 +56,7 @@ const PracticeInterview = () => {
   
   const questions = interviewQuestions[interviewType as keyof typeof interviewQuestions] || [];
   const currentQuestion = questions[currentQuestionIndex];
+  const interviewer = interviewerDetails[interviewType as keyof typeof interviewerDetails];
 
   // Clean up resources when component unmounts
   useEffect(() => {
@@ -232,7 +236,12 @@ const PracticeInterview = () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
-        audio: true 
+        audio: {
+          // Improved audio settings for better sensitivity
+          echoCancellation: true,
+          noiseSuppression: false, // Disable noise suppression to improve speech detection
+          autoGainControl: true,   // Enable auto gain to boost quiet sounds
+        }
       });
       
       setStream(mediaStream);
@@ -241,13 +250,16 @@ const PracticeInterview = () => {
         videoRef.current.srcObject = mediaStream;
       }
       
-      // Setup audio analysis
+      // Setup audio analysis with improved sensitivity
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       setAudioContext(audioCtx);
       
       const analyser = audioCtx.createAnalyser();
       audioAnalyserRef.current = analyser;
       analyser.fftSize = 256;
+      analyser.minDecibels = -90;  // Increase sensitivity (default is -100)
+      analyser.maxDecibels = -10;  // Increase sensitivity (default is -30)
+      analyser.smoothingTimeConstant = 0.5;  // Less smoothing for faster response
       
       const audioSource = audioCtx.createMediaStreamSource(mediaStream);
       audioSource.connect(analyser);
@@ -257,7 +269,7 @@ const PracticeInterview = () => {
       dataArrayRef.current = dataArray;
       
       // Start audio level monitoring with higher sensitivity
-      const audioMonitoringInterval = setInterval(() => {
+      const audioMonitoringInterval = window.setInterval(() => {
         if (analyser && dataArray) {
           analyser.getByteFrequencyData(dataArray);
           
@@ -269,8 +281,8 @@ const PracticeInterview = () => {
           const avg = sum / dataArray.length;
           setAudioLevel(avg);
           
-          // Lower threshold for speech detection
-          if (avg > 8) { // Reduced threshold for better sensitivity
+          // Lower threshold for speech detection (more sensitive)
+          if (avg > 5) { // Very reduced threshold for better sensitivity
             setSpeechDetected(true);
             setSpeechDuration(prev => prev + 0.1); // Increment speech duration (100ms interval)
             
@@ -281,9 +293,10 @@ const PracticeInterview = () => {
           } else if (speechDetected) {
             // If silence is detected after speech, wait a bit before changing state
             if (!silenceTimer.current) {
-              silenceTimer.current = window.setTimeout(() => {
+              silenceTimer.current = setTimeout(() => {
                 // We don't set speechDetected to false here because we want to
                 // track if speech was ever detected during the interview
+                console.log("Silence detected after speech");
               }, 1500);
             }
           }
@@ -533,11 +546,34 @@ const PracticeInterview = () => {
                     alt="AI Interviewer" 
                     className="w-full h-full object-cover"
                   />
+                  
+                  {/* Interviewer info overlay */}
+                  <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm">
+                    {interviewer?.name} - {interviewer?.title}
+                  </div>
+                  
+                  {/* Talking animation */}
                   {interviewerSpeaking && (
-                    <div className="absolute bottom-4 left-4 right-4 bg-black/70 text-white p-2 rounded-lg text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <p>{currentQuestion}</p>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4">
+                      <div className="flex flex-col items-center gap-3">
+                        {/* Animated waveform for talking */}
+                        <div className="flex items-center gap-1 h-3 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <div 
+                              key={i}
+                              className="bg-white w-1 rounded-full animate-pulse"
+                              style={{
+                                height: `${Math.random() * 10 + 5}px`,
+                                animationDuration: `${0.8 + Math.random() * 0.6}s`
+                              }}
+                            ></div>
+                          ))}
+                        </div>
+                        
+                        {/* Question being spoken */}
+                        <p className="text-white text-sm sm:text-base font-medium text-center">
+                          {currentQuestion}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -562,14 +598,14 @@ const PracticeInterview = () => {
                     <span>Recording {formatTime(recordingTime)}</span>
                   </div>
                   
-                  {/* Audio level indicator */}
-                  <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                  {/* Audio level indicator - more visible now */}
+                  <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
                     <div className="flex gap-1 items-center">
                       {[...Array(5)].map((_, i) => (
                         <div 
                           key={i}
                           className={`h-3 w-1 rounded-full ${
-                            audioLevel > i * 5 ? 'bg-green-500' : 'bg-gray-500'
+                            audioLevel > i * 3 ? 'bg-green-500' : 'bg-gray-500'
                           }`}
                         ></div>
                       ))}
@@ -580,25 +616,25 @@ const PracticeInterview = () => {
                   {/* Performance indicators */}
                   <div className="absolute bottom-4 right-4 flex flex-col gap-2">
                     {/* Posture indicator */}
-                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
                       <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
                       <span>{getPostureStatus().text}</span>
                     </div>
                     
                     {/* Expression indicator */}
-                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
                       <span className={`h-2 w-2 rounded-full ${getExpressionStatus().color}`}></span>
                       <span>{getExpressionStatus().text}</span>
                     </div>
                     
                     {/* Eye contact indicator */}
-                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
                       <span className={`h-2 w-2 rounded-full ${eyeContactScore > 70 ? 'bg-green-500' : eyeContactScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
                       <span>Eye contact: {Math.round(eyeContactScore)}%</span>
                     </div>
                     
                     {/* Confidence indicator */}
-                    <div className="flex items-center gap-2 bg-black/50 text-white py-1 px-3 rounded-full text-sm">
+                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-sm">
                       <span className={`h-2 w-2 rounded-full ${confidenceScore > 70 ? 'bg-green-500' : confidenceScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
                       <span>Confidence: {Math.round(confidenceScore)}%</span>
                     </div>
@@ -606,7 +642,7 @@ const PracticeInterview = () => {
                   
                   {/* Grammar issues notification */}
                   {grammarIssues.length > 0 && (
-                    <div className="absolute bottom-4 left-4 bg-black/50 text-white py-1 px-3 rounded-full text-sm flex items-center gap-2">
+                    <div className="absolute bottom-4 left-4 bg-black/70 text-white py-1 px-3 rounded-full text-sm flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                       <span>Grammar issues: {grammarIssues.length}</span>
                     </div>
@@ -625,7 +661,7 @@ const PracticeInterview = () => {
                 <div>
                   {recordingState === "idle" && (
                     <p className="text-sm text-neutral-500">
-                      Start recording to begin the practice interview
+                      Start recording to begin the practice interview with {interviewer?.name}
                     </p>
                   )}
                   
@@ -689,10 +725,20 @@ const PracticeInterview = () => {
                   </Select>
                 </div>
                 
+                {/* Display interviewer information */}
+                <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                  <h4 className="text-sm font-medium mb-2">Your Interviewer</h4>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-base font-medium">{interviewer?.name}</p>
+                    <p className="text-sm text-neutral-500">{interviewer?.title}</p>
+                    <p className="text-xs mt-1">{interviewer?.description}</p>
+                  </div>
+                </div>
+                
                 {recordingState === "recording" && (
-                  <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 flex-1">
+                  <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
                     <h4 className="text-sm font-medium text-neutral-500 mb-2">Current Question:</h4>
-                    <p className="text-lg">{currentQuestion}</p>
+                    <p className="text-base">{currentQuestion}</p>
                   </div>
                 )}
                 
@@ -727,3 +773,4 @@ const PracticeInterview = () => {
 };
 
 export default PracticeInterview;
+
