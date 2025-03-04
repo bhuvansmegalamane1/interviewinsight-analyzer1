@@ -60,6 +60,16 @@ const PracticeInterview = () => {
   const handleRecordingComplete = (recordedBlob: Blob) => {
     console.log("PracticeInterview: Recording complete, blob size:", recordedBlob.size);
     
+    if (!recordedBlob || recordedBlob.size === 0) {
+      toast({
+        title: "Recording Error",
+        description: "No data was recorded. Please try again.",
+        variant: "destructive",
+      });
+      setRecordingState("idle");
+      return;
+    }
+    
     const recordingUrl = URL.createObjectURL(recordedBlob);
     localStorage.setItem('latestInterviewRecording', recordingUrl);
     
@@ -95,6 +105,8 @@ const PracticeInterview = () => {
       description: error,
       variant: "destructive",
     });
+    setRecordingState("idle");
+    setIsRecording(false);
   };
 
   useEffect(() => {
@@ -320,14 +332,14 @@ const PracticeInterview = () => {
 
   const startRecording = async () => {
     try {
-      const mediaStream = await requestCameraPermission();
-      
       setRecordingState("countdown");
       setIsCountingDown(true);
       setSpeechDetected(false);
       setSpeechDuration(0);
       setGrammarIssues([]);
       setRecordingError(null);
+      
+      await requestCameraPermission();
       
       setTimeout(() => {
         setIsCountingDown(false);
@@ -340,6 +352,7 @@ const PracticeInterview = () => {
         description: "Could not access camera or microphone. Please check permissions.",
         variant: "destructive"
       });
+      setRecordingState("idle");
     }
   };
 
@@ -412,6 +425,11 @@ const PracticeInterview = () => {
     if (audioAnalysisInterval) {
       clearInterval(audioAnalysisInterval);
       setAudioAnalysisInterval(null);
+    }
+    
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
     }
     
     if (recordingState === "recording") {

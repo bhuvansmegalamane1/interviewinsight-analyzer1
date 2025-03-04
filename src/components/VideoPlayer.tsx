@@ -1,6 +1,6 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Play, Pause, Square, Volume, Volume1, Volume2, VolumeX, Mic } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -30,16 +30,18 @@ const VideoPlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const { toast } = useToast();
   
   // Initialize recording if isRecording prop is true
   useEffect(() => {
     console.log("VideoPlayer: isRecording prop changed to", isRecording);
-    setRecording(isRecording);
     
-    if (isRecording && !mediaRecorder) {
+    if (isRecording && !recording) {
       console.log("VideoPlayer: Starting recording based on prop change");
       startRecording();
-    } else if (!isRecording && mediaRecorder) {
+    } else if (!isRecording && recording) {
       console.log("VideoPlayer: Stopping recording based on prop change");
       stopRecording();
     }
@@ -81,15 +83,25 @@ const VideoPlayer = ({
       }
       
       // Clean up recording resources
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+          mediaRecorder.stop();
+        } catch (e) {
+          console.error("Error stopping media recorder:", e);
+        }
+      }
+      
       if (streamRef.current) {
         console.log("VideoPlayer: Cleaning up stream on unmount");
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, mediaRecorder]);
   
   const startRecording = async () => {
     setRecordingError(null);
+    chunksRef.current = []; // Reset chunks
+    
     try {
       console.log("VideoPlayer: Requesting user media");
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -108,10 +120,16 @@ const VideoPlayer = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true; // Prevent feedback
-        videoRef.current.play().catch(err => {
-          console.error("Error playing stream:", err);
-        });
-        setIsPlaying(true);
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error("Error playing stream:", err);
+            });
+            setIsPlaying(true);
+          }
+        };
       }
       
       // Check for supported MIME types
@@ -135,6 +153,7 @@ const VideoPlayer = ({
         throw new Error("No supported MIME type found for recording");
       }
       
+      // Create a new MediaRecorder instance
       const recorder = new MediaRecorder(stream, {
         mimeType: selectedMimeType,
         videoBitsPerSecond: 2500000, // 2.5 Mbps
@@ -142,23 +161,30 @@ const VideoPlayer = ({
       
       console.log("VideoPlayer: Created MediaRecorder", recorder);
       
-      const chunks: Blob[] = [];
       recorder.ondataavailable = (e: BlobEvent) => {
         console.log("VideoPlayer: Data available event", e.data.size);
         if (e.data && e.data.size > 0) {
-          chunks.push(e.data);
+          chunksRef.current.push(e.data);
         }
       };
       
       recorder.onstart = () => {
         console.log("VideoPlayer: Recording started");
         setRecordedChunks([]);
+        setRecording(true);
+        
+        toast({
+          title: "Recording Started",
+          description: "Your interview is now being recorded.",
+        });
       };
       
       recorder.onstop = () => {
-        console.log("VideoPlayer: Recording stopped, chunks:", chunks.length);
-        if (chunks.length > 0) {
-          const recordedBlob = new Blob(chunks, { type: selectedMimeType });
+        console.log("VideoPlayer: Recording stopped, chunks:", chunksRef.current.length);
+        setRecording(false);
+        
+        if (chunksRef.current.length > 0 && chunksRef.current.some(chunk => chunk.size > 0)) {
+          const recordedBlob = new Blob(chunksRef.current, { type: selectedMimeType });
           console.log("VideoPlayer: Created blob", recordedBlob.size);
           
           // Store in local storage (using URL)
@@ -189,12 +215,25 @@ const VideoPlayer = ({
           if (onError) {
             onError(errorMsg);
           }
+          
+          toast({
+            title: "Recording Error",
+            description: errorMsg,
+            variant: "destructive",
+          });
         }
         
-        // Reset recorder
+        // Reset recorder and streams
         setMediaRecorder(null);
-        setRecordedChunks([]);
-        setRecording(false);
+        
+        // Reset video source to the original video URL if provided
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+          if (videoUrl) {
+            videoRef.current.src = videoUrl;
+            videoRef.current.muted = false;
+          }
+        }
       };
       
       recorder.onerror = (event) => {
@@ -204,11 +243,17 @@ const VideoPlayer = ({
         if (onError) {
           onError(errorMsg);
         }
+        
+        toast({
+          title: "Recording Error",
+          description: errorMsg,
+          variant: "destructive",
+        });
       };
       
+      // Start recording
       setMediaRecorder(recorder);
       recorder.start(1000); // Collect chunks every second
-      setRecording(true);
       
     } catch (error) {
       console.error("VideoPlayer: Error starting recording:", error);
@@ -217,31 +262,41 @@ const VideoPlayer = ({
       if (onError) {
         onError(errorMsg);
       }
+      
+      toast({
+        title: "Camera Access Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
     }
   };
   
   const stopRecording = () => {
     console.log("VideoPlayer: Stopping recording, mediaRecorder state:", mediaRecorder?.state);
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-      
-      // Stop all tracks from the stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          console.log("VideoPlayer: Stopping track", track.kind, track.id);
-          track.stop();
+      try {
+        mediaRecorder.stop();
+        
+        // Stop all tracks from the stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => {
+            console.log("VideoPlayer: Stopping track", track.kind, track.id);
+            track.stop();
+          });
+          streamRef.current = null;
+        }
+      } catch (error) {
+        console.error("Error stopping recording:", error);
+        
+        toast({
+          title: "Error",
+          description: "Failed to stop recording properly. Please try again.",
+          variant: "destructive",
         });
       }
-      
-      // Reset video source to the original video URL if provided
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-        if (videoUrl) {
-          videoRef.current.src = videoUrl;
-          videoRef.current.muted = false;
-        }
-      }
     }
+    
+    setRecording(false);
   };
   
   const togglePlay = () => {
