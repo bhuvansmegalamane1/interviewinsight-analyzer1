@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { AnalysisData } from "@/types/analysis";
 
-export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => {
+export const useFakeAnalysisData = (id?: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<AnalysisData>({} as AnalysisData);
   
@@ -12,25 +13,27 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
       
       // Get additional data from sessionStorage if available
       let sessionData = null;
+      let hasContent = true; // Default value
+      
       try {
         const storedData = sessionStorage.getItem('interviewData');
         if (storedData) {
           sessionData = JSON.parse(storedData);
           console.log("useFakeAnalysisData: Retrieved session data:", sessionData);
-          hasContent = sessionData.hasSpokenContent; // Use actual speech detection
+          
+          // Use the actual speech detection result from the upload/recording
+          hasContent = sessionData.hasSpokenContent === true;
+          console.log("useFakeAnalysisData: Speech detected:", hasContent);
         } else {
-          console.log("useFakeAnalysisData: No interview data found in session storage");
+          console.log("useFakeAnalysisData: No interview data found in session storage, using default values");
+          hasContent = false; // No data means we can't confirm speech
         }
       } catch (e) {
         console.error("useFakeAnalysisData: Error parsing session data:", e);
+        hasContent = false; // Error means we can't confirm speech
       }
       
-      // Determine recording duration - influences feedback on conciseness
-      const recordingDuration = sessionData?.recordingDuration || 0;
-      const isShortAnswer = recordingDuration < 30; // Less than 30 seconds is considered short
-      const isLongAnswer = recordingDuration > 120; // More than 2 minutes is considered long
-      
-      // Extract data from session if available
+      // Extract data from session if available or use defaults
       const speechDuration = sessionData?.speechDuration || 0;
       const speechPercentage = sessionData?.speechPercentage || 0;
       const postureFeedback = sessionData?.postureFeedback || "good";
@@ -38,7 +41,11 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
       const confidenceScore = sessionData?.confidenceScore || 65;
       const facialExpressions = sessionData?.facialExpressions || "neutral";
       const grammarIssuesCount = sessionData?.grammarIssues || 0;
+      const recordingDuration = sessionData?.recordingDuration || 0;
+      const isShortAnswer = recordingDuration < 30; // Less than 30 seconds is considered short
+      const isLongAnswer = recordingDuration > 120; // More than 2 minutes is considered long
       
+      // If we have content, generate realistic scores based on the data
       if (hasContent) {
         // Calculate performance scores using the collected data
         const verbalScore = speechPercentage > 30 ? 
@@ -240,10 +247,86 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
           improvements,
           recommendations,
           feedback: {
-            verbal: verbalFeedback,
-            nonVerbal: nonVerbalFeedback,
-            content: contentFeedback,
-            overall: overallFeedback
+            verbal: {
+              clarity: verbalScore > 80 ? 
+                "Your speech was clear and articulate. You spoke at an appropriate pace and enunciated well, making it easy for listeners to understand you." :
+                verbalScore > 65 ? 
+                "Your speech was generally clear, though there were a few moments where you spoke too quickly or mumbled slightly. Focus on maintaining consistent clarity throughout." :
+                "Your speech clarity needs improvement. You frequently spoke too quickly or mumbled, making it difficult to understand some of your points. Practice speaking more deliberately and enunciating each word.",
+              
+              vocabulary: contentScore > 80 ? 
+                "You demonstrated a strong, professional vocabulary and effectively used industry terminology where appropriate. Your language was precise and effective." :
+                contentScore > 65 ? 
+                "Your vocabulary was adequate, though occasionally repetitive. Consider expanding your professional terminology and varying your word choice for more impact." :
+                "Your vocabulary was limited and repetitive. Work on expanding your professional vocabulary and using more varied language to express your ideas more effectively.",
+              
+              fillerWords: grammarIssuesCount < 2 ?
+                "You used minimal filler words ('um', 'uh', 'like', etc.), which contributed to your professional delivery. Continue to be mindful of these in future interviews." :
+                grammarIssuesCount < 5 ?
+                "You occasionally used filler words ('um', 'uh', 'like', etc.) – about 10-15 instances throughout. Being more conscious of these would enhance your verbal delivery." :
+                "You frequently used filler words ('um', 'uh', 'like', etc.) – over 20 instances throughout the interview. This significantly impacted your professional delivery. Practice pausing instead of using fillers."
+            },
+            nonVerbal: {
+              eyeContact: eyeContactScore > 80 ? 
+                "You maintained excellent eye contact with the camera throughout the interview, which conveyed confidence and engagement. This is a strong point in your interview technique." :
+                eyeContactScore > 65 ? 
+                "Your eye contact was generally good, though inconsistent at times, particularly when discussing more challenging topics. Work on maintaining steady eye contact even when under pressure." :
+                "Your eye contact was minimal or inconsistent throughout the interview. This can give the impression of nervousness or lack of confidence. Practice looking directly at the camera more consistently.",
+              
+              facialExpressions: facialExpressions === "positive" ? 
+                "Your facial expressions were animated and appropriate, showing engagement and enthusiasm throughout the interview. You effectively conveyed interest in the conversation." :
+                facialExpressions === "neutral" ? 
+                "Your facial expressions were appropriate but somewhat limited in range. Incorporating more expressive responses would better demonstrate your engagement and enthusiasm." :
+                "Your facial expressions were minimal or flat throughout the interview. This can make it difficult for interviewers to gauge your interest or enthusiasm. Practice incorporating more expressive responses.",
+              
+              posture: postureFeedback === "good" ? 
+                "Your posture was excellent – upright, attentive, and professional throughout. This non-verbal cue significantly enhanced your professional presence." :
+                postureFeedback === "slouching" ? 
+                "Your posture showed signs of slouching at times. Maintaining consistent, upright posture would enhance your presence and convey more confidence." :
+                postureFeedback === "tooClose" ?
+                "You were positioned too close to the camera at times, which can feel intrusive to the interviewer. Maintain an appropriate distance from the camera." :
+                "You were positioned too far from the camera at times, which can reduce your presence. Move closer to ensure you're properly framed in the video."
+            },
+            content: {
+              relevance: relevanceScore > 85 ? 
+                "Your answers were highly relevant and directly addressed the questions asked. You demonstrated excellent understanding of what was being asked and provided appropriately targeted responses." :
+                relevanceScore > 70 ? 
+                "Your answers were generally relevant, though occasionally you veered off-topic or included unnecessary information. Focus on keeping responses more closely aligned with the specific questions." :
+                "Many of your answers lacked relevance to the questions asked. You frequently went off-topic or failed to address key aspects of the questions. Practice providing more focused responses.",
+              
+              structure: contentScore > 80 ? 
+                "Your answers followed a clear, logical structure. You effectively used frameworks like STAR for behavioral questions and presented information in a well-organized manner." :
+                contentScore > 65 ? 
+                "Your answers had some structure, but organization could be improved. Some responses lacked clear beginnings, middles, and conclusions. Consider using the STAR method more consistently." :
+                "Your answers lacked clear structure or organization. Information was often presented in a confusing order. Practice organizing your thoughts into introduction, main points, and conclusion.",
+              
+              examples: contentScore > 85 ? 
+                "You provided excellent, specific examples from your experience that effectively illustrated your points. The examples were relevant and demonstrated your capabilities well." :
+                contentScore > 70 ? 
+                "You included some good examples, though they could have been more specific or detailed at times. More concrete illustrations of your accomplishments would strengthen your responses." :
+                "Your answers lacked specific examples or the examples provided were too vague. Including detailed, relevant examples from your experience would significantly improve your responses."
+            },
+            overall: {
+              confidence: confidenceScore > 85 ? 
+                "You projected strong confidence throughout the interview. Your tone, pace, and body language all contributed to a self-assured presence that would impress interviewers." :
+                confidenceScore > 70 ? 
+                "You appeared reasonably confident, though there were moments of hesitation or uncertainty, particularly when addressing challenging questions. Work on maintaining consistent confidence." :
+                "You appeared nervous or lacking in confidence during much of the interview. This was evident in your hesitant tone, uncertain language, and tense body language. Practice techniques to project more confidence.",
+              
+              engagement: engagementScore > 85 ? 
+                "You demonstrated excellent engagement throughout the interview. Your energy level, responsiveness, and interest in the conversation were consistently strong." :
+                engagementScore > 70 ? 
+                "Your level of engagement was good but somewhat inconsistent. Your energy fluctuated at times, with stronger engagement at the beginning than later in the interview. Aim for more consistent energy throughout." :
+                "Your engagement level appeared low throughout much of the interview. More animation, enthusiasm, and energy would significantly improve the impression you make on interviewers.",
+              
+              appearance: postureFeedback === "good" ? 
+                "Your professional appearance was excellent. You were well-groomed, appropriately dressed, and positioned well on camera with good lighting and framing." :
+                postureFeedback === "slouching" ? 
+                "Your appearance was generally professional, though your posture could be improved. Sitting up straight would enhance your professional image." :
+                postureFeedback === "tooClose" || postureFeedback === "tooFar" ?
+                "Your appearance was generally professional, though your positioning relative to the camera could be improved for better framing." :
+                "Your appearance needs improvement for professional interviews. Focus on better positioning and posture for improved visual presence."
+            }
           }
         });
       } else {
@@ -313,7 +396,7 @@ export const useFakeAnalysisData = (id?: string, hasContent: boolean = true) => 
     }, 3000);
     
     return () => clearTimeout(timer);
-  }, [id, hasContent]);
+  }, [id]);
   
   return { data, isLoading };
 };
