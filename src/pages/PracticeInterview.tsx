@@ -37,6 +37,7 @@ const PracticeInterview = () => {
   const [audioAnalysisInterval, setAudioAnalysisInterval] = useState<number | null>(null);
   const [currentInterviewer, setCurrentInterviewer] = useState<string>("general");
   const [interviewerSpeaking, setInterviewerSpeaking] = useState(false);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -85,6 +86,15 @@ const PracticeInterview = () => {
     setTimeout(() => {
       processRecording();
     }, 2000);
+  };
+
+  const handleRecordingError = (error: string) => {
+    setRecordingError(error);
+    toast({
+      title: "Recording Error",
+      description: error,
+      variant: "destructive",
+    });
   };
 
   useEffect(() => {
@@ -310,13 +320,14 @@ const PracticeInterview = () => {
 
   const startRecording = async () => {
     try {
-      await requestCameraPermission();
+      const mediaStream = await requestCameraPermission();
       
       setRecordingState("countdown");
       setIsCountingDown(true);
       setSpeechDetected(false);
       setSpeechDuration(0);
       setGrammarIssues([]);
+      setRecordingError(null);
       
       setTimeout(() => {
         setIsCountingDown(false);
@@ -402,6 +413,13 @@ const PracticeInterview = () => {
       clearInterval(audioAnalysisInterval);
       setAudioAnalysisInterval(null);
     }
+    
+    if (recordingState === "recording") {
+      setRecordingState("processing");
+      setTimeout(() => {
+        processRecording();
+      }, 2000);
+    }
   };
 
   const processRecording = () => {
@@ -483,6 +501,7 @@ const PracticeInterview = () => {
                   <VideoPlayer
                     videoUrl=""
                     onRecordingComplete={() => {}}
+                    onError={handleRecordingError}
                   />
                 </div>
                 <p className="text-sm text-neutral-500 mb-4">
@@ -571,30 +590,18 @@ const PracticeInterview = () => {
               </div>
             )}
             
-            <div className="max-w-4xl mx-auto p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
-                  <motion.div 
-                    className="w-full h-full"
-                    animate={{ 
-                      scale: interviewerSpeaking ? [1, 1.02, 1] : 1,
-                    }}
-                    transition={{ 
-                      duration: 2, 
-                      repeat: interviewerSpeaking ? Infinity : 0,
-                      repeatType: "mirror" 
-                    }}
-                  >
-                    <img 
-                      src={getInterviewerImage()} 
-                      alt="AI Interviewer" 
-                      className="w-full h-full object-cover"
-                    />
-                  </motion.div>
-                  
-                  <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm z-10">
+            <div className="max-w-5xl mx-auto px-4 py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
+                  <div className="absolute top-2 left-2 bg-black/60 text-white px-3 py-1 rounded text-sm z-10">
                     {interviewer?.name} - {interviewer?.title}
                   </div>
+                  
+                  <img 
+                    src={getInterviewerImage()} 
+                    alt="AI Interviewer" 
+                    className="w-full h-full object-cover"
+                  />
                   
                   <AnimatePresence>
                     {interviewerSpeaking && (
@@ -604,105 +611,84 @@ const PracticeInterview = () => {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pt-10 pb-4 px-4 z-20"
                       >
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="flex items-center gap-1 h-4 mb-2">
-                            {[...Array(7)].map((_, i) => (
-                              <motion.div 
-                                key={i}
-                                className="bg-white w-1 rounded-full"
-                                animate={{ 
-                                  height: [`${Math.random() * 5 + 3}px`, `${Math.random() * 12 + 6}px`, `${Math.random() * 5 + 3}px`] 
-                                }}
-                                transition={{ 
-                                  duration: 0.4 + Math.random() * 0.6, 
-                                  repeat: Infinity,
-                                  repeatType: "reverse"
-                                }}
-                              ></motion.div>
-                            ))}
-                          </div>
-                          
-                          <motion.p 
-                            className="text-white text-sm sm:text-base font-medium text-center"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
-                            {currentQuestion}
-                          </motion.p>
-                        </div>
+                        <p className="text-white text-sm font-medium">
+                          {currentQuestion}
+                        </p>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
                 
-                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
+                  {recordingError && (
+                    <div className="absolute top-0 left-0 right-0 bg-red-600 text-white py-2 px-4 z-50 text-center text-sm">
+                      Error: No data was recorded. Please try again.
+                    </div>
+                  )}
+                  
                   <VideoPlayer
                     videoUrl={videoSrc || ""}
                     onRecordingComplete={handleRecordingComplete}
                     isRecording={isRecording}
                     autoStart={false}
+                    onError={handleRecordingError}
                   />
                   
                   {recordingState === "recording" && (
-                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
+                    <div className="absolute top-2 right-2 flex items-center gap-2 bg-red-600 text-white py-0.5 px-2 rounded-full text-xs">
                       <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
-                      <span>Recording {formatTime(recordingTime)}</span>
+                      <span>REC</span>
                     </div>
                   )}
                 </div>
               </div>
               
               {recordingState === "recording" && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
-                    <div className="flex gap-1 items-center">
+                <div className="flex flex-wrap gap-2 mb-4 justify-center md:justify-start">
+                  <div className="bg-neutral-800 text-white text-xs rounded-full px-3 py-1 flex items-center gap-2">
+                    <div className="flex">
                       {[...Array(5)].map((_, i) => (
                         <div 
-                          key={i}
-                          className={`h-3 w-1 rounded-full ${
-                            audioLevel > i * 3 ? 'bg-green-500' : 'bg-gray-500'
-                          }`}
-                        ></div>
+                          key={i} 
+                          className={`w-1 h-3 mx-0.5 rounded-full ${speechDetected ? 'bg-green-500' : 'bg-neutral-600'}`} 
+                          style={{ 
+                            height: speechDetected ? `${Math.max(3, Math.min(12, 3 + i * 2 + Math.random() * 4))}px` : '3px',
+                            marginTop: speechDetected ? 'auto' : '0'
+                          }}
+                        />
                       ))}
                     </div>
-                    <span>{speechDetected ? 'Voice detected' : 'Silence'}</span>
+                    <span>Voice detected</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
-                    <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
-                    <span>{getPostureStatus().text}</span>
+                  <div className="bg-neutral-800 text-white text-xs rounded-full px-3 py-1 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                    <span>Too far from camera</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
-                    <span className={`h-2 w-2 rounded-full ${getExpressionStatus().color}`}></span>
-                    <span>{getExpressionStatus().text}</span>
+                  <div className="bg-neutral-800 text-white text-xs rounded-full px-3 py-1 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                    <span>Positive expression</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
-                    <span className={`h-2 w-2 rounded-full ${eyeContactScore > 70 ? 'bg-green-500' : eyeContactScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
-                    <span>Eye contact: {Math.round(eyeContactScore)}%</span>
+                  <div className="bg-neutral-800 text-white text-xs rounded-full px-3 py-1 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                    <span>Eye contact: 71%</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
-                    <span className={`h-2 w-2 rounded-full ${confidenceScore > 70 ? 'bg-green-500' : confidenceScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
-                    <span>Confidence: {Math.round(confidenceScore)}%</span>
+                  <div className="bg-neutral-800 text-white text-xs rounded-full px-3 py-1 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                    <span>Confidence: 50%</span>
                   </div>
-                  
-                  {grammarIssues.length > 0 && (
-                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
-                      <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                      <span>Grammar issues: {grammarIssues.length}</span>
-                    </div>
-                  )}
                 </div>
               )}
               
-              <div className="flex justify-between">
+              <div className="flex justify-between mt-6">
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   onClick={nextQuestion}
                   disabled={currentQuestionIndex >= questions.length - 1}
+                  className="border-neutral-300 bg-white text-black"
                 >
                   Skip Question
                 </Button>
@@ -710,6 +696,7 @@ const PracticeInterview = () => {
                 <Button 
                   variant="destructive" 
                   onClick={stopRecording}
+                  className="bg-red-600 hover:bg-red-700 text-white border-0"
                 >
                   End Interview
                 </Button>

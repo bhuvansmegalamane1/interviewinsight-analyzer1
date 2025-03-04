@@ -1,18 +1,21 @@
 
 import { useState, useRef, useEffect } from "react";
+import { Play, Pause, Square, Volume, Volume1, Volume2, VolumeX, Mic } from "lucide-react";
 
 interface VideoPlayerProps {
   videoUrl: string;
   onRecordingComplete?: (recordedBlob: Blob) => void;
   isRecording?: boolean;
   autoStart?: boolean;
+  onError?: (error: string) => void;
 }
 
 const VideoPlayer = ({ 
   videoUrl, 
   onRecordingComplete, 
   isRecording = false, 
-  autoStart = false 
+  autoStart = false,
+  onError
 }: VideoPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(autoStart);
   const [currentTime, setCurrentTime] = useState(0);
@@ -181,7 +184,11 @@ const VideoPlayer = ({
           }
         } else {
           console.error("VideoPlayer: No data recorded");
-          setRecordingError("No data was recorded. Please try again.");
+          const errorMsg = "No data was recorded. Please try again.";
+          setRecordingError(errorMsg);
+          if (onError) {
+            onError(errorMsg);
+          }
         }
         
         // Reset recorder
@@ -192,7 +199,11 @@ const VideoPlayer = ({
       
       recorder.onerror = (event) => {
         console.error("VideoPlayer: Recording error:", event);
-        setRecordingError("Recording error occurred. Please try again.");
+        const errorMsg = "Recording error occurred. Please try again.";
+        setRecordingError(errorMsg);
+        if (onError) {
+          onError(errorMsg);
+        }
       };
       
       setMediaRecorder(recorder);
@@ -201,7 +212,11 @@ const VideoPlayer = ({
       
     } catch (error) {
       console.error("VideoPlayer: Error starting recording:", error);
-      setRecordingError(`Could not start recording: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMsg = `Could not start recording: ${error instanceof Error ? error.message : String(error)}`;
+      setRecordingError(errorMsg);
+      if (onError) {
+        onError(errorMsg);
+      }
     }
   };
   
@@ -279,14 +294,15 @@ const VideoPlayer = ({
     setShowControls(true);
   };
   
+  // New simplified UI to match the design in the image
   return (
-    <div className="relative bg-black rounded-lg overflow-hidden group" 
+    <div className="relative bg-black rounded-lg overflow-hidden group h-full w-full" 
          onMouseEnter={() => setShowControls(true)}
          onMouseLeave={() => isPlaying && setShowControls(false)}>
       <video
         ref={videoRef}
         src={videoUrl}
-        className="w-full aspect-video object-contain"
+        className="w-full h-full object-cover"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onClick={togglePlay}
@@ -295,36 +311,35 @@ const VideoPlayer = ({
       
       {/* Recording error message */}
       {recordingError && (
-        <div className="absolute top-4 left-4 right-4 bg-red-500/90 text-white py-2 px-3 rounded-lg text-sm z-20">
+        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white py-3 px-4 text-center z-50">
           Error: {recordingError}
         </div>
       )}
       
       {/* Recording indicator */}
       {recording && (
-        <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
+        <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
           <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
-          <span>Recording</span>
+          <span>REC</span>
         </div>
       )}
       
-      {/* Large play button overlay - always visible when paused */}
-      {!isPlaying && !recording && (
+      {/* Large play button overlay - visible when paused or no media */}
+      {(!isPlaying || !videoUrl) && !recording && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
           <button 
             onClick={togglePlay}
-            className="bg-white/20 hover:bg-white/30 w-20 h-20 rounded-full flex items-center justify-center backdrop-blur-sm transition-all"
+            className="bg-black/60 hover:bg-black/70 w-20 h-20 rounded-full flex items-center justify-center backdrop-blur-sm transition-all"
+            disabled={!videoUrl && !videoRef.current?.srcObject}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
+            <Play className="text-white h-10 w-10" />
           </button>
         </div>
       )}
       
-      {/* Controls overlay - visible on hover or when paused */}
-      <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'} z-10`}>
-        <div className="space-y-2">
+      {/* Controls overlay - simplified to match the design */}
+      <div className={`absolute bottom-0 left-0 right-0 bg-black/60 py-2 px-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'} z-10`}>
+        <div className="space-y-3">
           {/* Seek bar */}
           <div className="flex items-center gap-4">
             <input
@@ -337,90 +352,57 @@ const VideoPlayer = ({
               className="flex-1 h-1.5 rounded-full bg-white/30 appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
             />
             <div className="text-xs text-white font-medium whitespace-nowrap">
-              {formatTime(currentTime)} / {formatTime(duration)}
+              {formatTime(currentTime)} / {Number.isFinite(duration) ? formatTime(duration) : "∞:NaN"}
             </div>
           </div>
           
           {/* Play/pause and volume controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={togglePlay}
-                className="text-white hover:text-white/80 transition-colors"
-                disabled={recording}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={togglePlay}
+              className="text-white hover:text-white/80 transition-colors"
+              disabled={recording}
+            >
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            </button>
+            
+            {/* Recording button */}
+            {onRecordingComplete && (
+              <button
+                onClick={recording ? stopRecording : startRecording}
+                className={`flex items-center justify-center h-6 w-6 rounded-full ${recording ? 'bg-red-500 text-white' : 'bg-white/20 text-white'}`}
+                title={recording ? "Stop Recording" : "Start Recording"}
               >
-                {isPlaying ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="6" y="4" width="4" height="16" />
-                    <rect x="14" y="4" width="4" height="16" />
-                  </svg>
+                {recording ? (
+                  <Square className="h-3 w-3" />
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
+                  <Mic className="h-3 w-3" />
                 )}
               </button>
-              
-              {/* Recording button */}
-              {onRecordingComplete && !recording && (
-                <button
-                  onClick={startRecording}
-                  className="text-white hover:text-white/80 transition-colors flex items-center gap-1"
-                  title="Start Recording"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" fill="#ef4444" />
-                  </svg>
-                  <span className="text-xs">REC</span>
-                </button>
-              )}
-              
-              {/* Stop recording button */}
-              {onRecordingComplete && recording && (
-                <button
-                  onClick={stopRecording}
-                  className="text-white hover:text-white/80 transition-colors flex items-center gap-1"
-                  title="Stop Recording"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="6" y="6" width="12" height="12" />
-                  </svg>
-                  <span className="text-xs">STOP</span>
-                </button>
-              )}
-              
-              {/* Volume control */}
-              <div className="flex items-center gap-2">
-                <button className="text-white">
-                  {volume === 0 ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                      <line x1="23" y1="9" x2="17" y2="15" />
-                      <line x1="17" y1="9" x2="23" y2="15" />
-                    </svg>
-                  ) : volume < 0.5 ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                    </svg>
-                  )}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volume}
-                  onChange={handleVolumeChange}
-                  className="w-16 h-1 rounded-full bg-white/30 appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                />
-              </div>
+            )}
+            
+            {/* Volume control */}
+            <div className="flex items-center gap-2">
+              <button className="text-white">
+                {volume === 0 ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : volume < 0.3 ? (
+                  <Volume className="h-4 w-4" />
+                ) : volume < 0.7 ? (
+                  <Volume1 className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-16 h-1 rounded-full bg-white/30 appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+              />
             </div>
           </div>
         </div>
