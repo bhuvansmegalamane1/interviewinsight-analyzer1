@@ -10,11 +10,13 @@ import FeedbackSection from "@/components/analysis/FeedbackSection";
 import VideoPlayer from "@/components/VideoPlayer";
 import { useFakeAnalysisData } from "@/hooks/useFakeAnalysisData";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const InterviewAnalysis = () => {
   const { id } = useParams<{ id: string }>();
   const [hasContent, setHasContent] = useState(false);
-  const { data, isLoading } = useFakeAnalysisData(id, hasContent);
+  const { data, isLoading } = useFakeAnalysisData(id);
+  const { toast } = useToast();
   
   // Simulate content detection from the session storage
   // In a real app, this would come from actual audio analysis
@@ -24,12 +26,26 @@ const InterviewAnalysis = () => {
       try {
         const parsedData = JSON.parse(sessionData);
         setHasContent(parsedData.hasSpokenContent || false);
+        
+        // Show a toast notification based on content detection
+        if (!parsedData.hasSpokenContent) {
+          toast({
+            title: "No speech detected",
+            description: "We couldn't analyze your interview without verbal content.",
+            variant: "destructive",
+          });
+        }
       } catch (e) {
         console.error("Error parsing session data:", e);
         setHasContent(false);
+        toast({
+          title: "Error loading analysis",
+          description: "There was a problem processing your interview data.",
+          variant: "destructive",
+        });
       }
     }
-  }, [id]);
+  }, [id, toast]);
   
   if (isLoading) {
     return (
