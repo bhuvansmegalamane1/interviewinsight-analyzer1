@@ -461,16 +461,104 @@ const PracticeInterview = () => {
         animate="show"
         className="max-w-5xl mx-auto py-8"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="p-6 border border-neutral-200 dark:border-neutral-800 relative overflow-hidden">
-              {recordingState === "countdown" && (
-                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
-                  <CountdownTimer seconds={3} onComplete={() => {}} />
+        {recordingState === "idle" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card className="p-6 border border-neutral-200 dark:border-neutral-800 relative overflow-hidden">
+                <h3 className="text-lg font-medium mb-4">Practice Interview Setup</h3>
+                <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden mb-4">
+                  <VideoPlayer
+                    videoUrl=""
+                    onRecordingComplete={() => {}}
+                  />
                 </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <p className="text-sm text-neutral-500 mb-4">
+                  Set up your interview type and click "Start Recording" when you're ready.
+                </p>
+                <div className="flex justify-end">
+                  <Button onClick={startRecording}>
+                    Start Recording
+                  </Button>
+                </div>
+              </Card>
+            </div>
+            <div>
+              <Card className="p-6 border border-neutral-200 dark:border-neutral-800 h-full flex flex-col">
+                <h3 className="text-lg font-medium mb-4">Interview Settings</h3>
+                
+                <div className="space-y-6 flex-1">
+                  <div className="space-y-2">
+                    <label className="text-sm text-neutral-500">Interview Type</label>
+                    <Select
+                      value={interviewType}
+                      onValueChange={(value) => {
+                        setInterviewType(value);
+                        setCurrentInterviewer(value);
+                      }}
+                      disabled={recordingState !== "idle"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select interview type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General Interview</SelectItem>
+                        <SelectItem value="technical">Technical Interview</SelectItem>
+                        <SelectItem value="behavioral">Behavioral Interview</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                    <h4 className="text-sm font-medium mb-2">Your Interviewer</h4>
+                    <div className="flex flex-col gap-2">
+                      <p className="text-base font-medium">{interviewer?.name}</p>
+                      <p className="text-sm text-neutral-500">{interviewer?.title}</p>
+                      <p className="text-xs mt-1">{interviewer?.description}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-neutral-500">
+                    <h4 className="font-medium">How You're Being Analyzed:</h4>
+                    <ul className="space-y-2">
+                      <li className="flex gap-2 items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <span>Verbal analysis: Speech clarity, grammar, filler words</span>
+                      </li>
+                      <li className="flex gap-2 items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <span>Visual analysis: Eye contact, posture, facial expressions</span>
+                      </li>
+                      <li className="flex gap-2 items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <span>Content analysis: Relevance, structure, completeness</span>
+                      </li>
+                      <li className="flex gap-2 items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <span>Confidence: Body language, tone, and speaking pace</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          <Card className="border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+            {recordingState === "countdown" && (
+              <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
+                <CountdownTimer seconds={3} onComplete={() => {}} />
+              </div>
+            )}
+            
+            {recordingState === "processing" && (
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
+                <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-white">Processing your interview...</p>
+              </div>
+            )}
+            
+            <div className="max-w-4xl mx-auto p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
                   <motion.div 
                     className="w-full h-full"
@@ -487,19 +575,6 @@ const PracticeInterview = () => {
                       src={getInterviewerImage()} 
                       alt="AI Interviewer" 
                       className="w-full h-full object-cover"
-                    />
-                    
-                    <motion.div 
-                      className="absolute inset-0"
-                      animate={{ 
-                        y: [0, 2, 0],
-                      }}
-                      transition={{ 
-                        duration: 4, 
-                        repeat: Infinity,
-                        repeatType: "mirror",
-                        ease: "easeInOut" 
-                      }}
                     />
                   </motion.div>
                   
@@ -548,35 +623,26 @@ const PracticeInterview = () => {
                 </div>
                 
                 <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
-                  {recordingState === "idle" ? (
-                    <VideoPlayer
-                      videoUrl=""
-                      onRecordingComplete={handleRecordingComplete}
-                    />
-                  ) : (
-                    <>
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="w-full h-full object-cover"
-                      ></video>
-                      
-                      {recordingState === "recording" && (
-                        <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
-                          <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
-                          <span>Recording {formatTime(recordingTime)}</span>
-                        </div>
-                      )}
-                    </>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  ></video>
+                  
+                  {recordingState === "recording" && (
+                    <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
+                      <span className="h-2 w-2 bg-white rounded-full animate-pulse"></span>
+                      <span>Recording {formatTime(recordingTime)}</span>
+                    </div>
                   )}
                 </div>
               </div>
               
               {recordingState === "recording" && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
                     <div className="flex gap-1 items-center">
                       {[...Array(5)].map((_, i) => (
                         <div 
@@ -590,28 +656,28 @@ const PracticeInterview = () => {
                     <span>{speechDetected ? 'Voice detected' : 'Silence'}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
                     <span className={`h-2 w-2 rounded-full ${getPostureStatus().color}`}></span>
                     <span>{getPostureStatus().text}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
                     <span className={`h-2 w-2 rounded-full ${getExpressionStatus().color}`}></span>
                     <span>{getExpressionStatus().text}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
                     <span className={`h-2 w-2 rounded-full ${eyeContactScore > 70 ? 'bg-green-500' : eyeContactScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
                     <span>Eye contact: {Math.round(eyeContactScore)}%</span>
                   </div>
                   
-                  <div className="col-span-2 flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                  <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
                     <span className={`h-2 w-2 rounded-full ${confidenceScore > 70 ? 'bg-green-500' : confidenceScore > 40 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
                     <span>Confidence: {Math.round(confidenceScore)}%</span>
                   </div>
                   
                   {grammarIssues.length > 0 && (
-                    <div className="col-span-2 flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-lg text-xs">
+                    <div className="flex items-center gap-2 bg-black/70 text-white py-1 px-3 rounded-full text-xs">
                       <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                       <span>Grammar issues: {grammarIssues.length}</span>
                     </div>
@@ -619,122 +685,25 @@ const PracticeInterview = () => {
                 </div>
               )}
               
-              {recordingState === "processing" && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
-                  <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-white">Processing your interview...</p>
-                </div>
-              )}
-              
-              <div className="mt-4 flex justify-between items-center">
-                <div>
-                  {recordingState === "idle" && (
-                    <p className="text-sm text-neutral-500">
-                      Start recording to begin the practice interview with {interviewer?.name}
-                    </p>
-                  )}
-                  
-                  {recordingState === "recording" && (
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={nextQuestion}
-                        disabled={currentQuestionIndex >= questions.length - 1}
-                      >
-                        Skip Question
-                      </Button>
-                    </div>
-                  )}
-                </div>
+              <div className="flex justify-between">
+                <Button 
+                  variant="ghost" 
+                  onClick={nextQuestion}
+                  disabled={currentQuestionIndex >= questions.length - 1}
+                >
+                  Skip Question
+                </Button>
                 
-                <div>
-                  {recordingState === "idle" && (
-                    <Button onClick={startRecording}>
-                      Start Recording
-                    </Button>
-                  )}
-                  
-                  {recordingState === "recording" && (
-                    <Button 
-                      variant="destructive" 
-                      onClick={stopRecording}
-                    >
-                      End Interview
-                    </Button>
-                  )}
-                </div>
+                <Button 
+                  variant="destructive" 
+                  onClick={stopRecording}
+                >
+                  End Interview
+                </Button>
               </div>
-            </Card>
-          </div>
-          
-          <div>
-            <Card className="p-6 border border-neutral-200 dark:border-neutral-800 h-full flex flex-col">
-              <h3 className="text-lg font-medium mb-4">Interview Settings</h3>
-              
-              <div className="space-y-6 flex-1">
-                <div className="space-y-2">
-                  <label className="text-sm text-neutral-500">Interview Type</label>
-                  <Select
-                    value={interviewType}
-                    onValueChange={(value) => {
-                      setInterviewType(value);
-                      setCurrentInterviewer(value);
-                    }}
-                    disabled={recordingState !== "idle"}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select interview type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General Interview</SelectItem>
-                      <SelectItem value="technical">Technical Interview</SelectItem>
-                      <SelectItem value="behavioral">Behavioral Interview</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
-                  <h4 className="text-sm font-medium mb-2">Your Interviewer</h4>
-                  <div className="flex flex-col gap-2">
-                    <p className="text-base font-medium">{interviewer?.name}</p>
-                    <p className="text-sm text-neutral-500">{interviewer?.title}</p>
-                    <p className="text-xs mt-1">{interviewer?.description}</p>
-                  </div>
-                </div>
-                
-                {recordingState === "recording" && (
-                  <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
-                    <h4 className="text-sm font-medium text-neutral-500 mb-2">Current Question:</h4>
-                    <p className="text-base">{currentQuestion}</p>
-                  </div>
-                )}
-                
-                <div className="space-y-2 text-sm text-neutral-500">
-                  <h4 className="font-medium">How You're Being Analyzed:</h4>
-                  <ul className="space-y-2">
-                    <li className="flex gap-2 items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Verbal analysis: Speech clarity, grammar, filler words</span>
-                    </li>
-                    <li className="flex gap-2 items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Visual analysis: Eye contact, posture, facial expressions</span>
-                    </li>
-                    <li className="flex gap-2 items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Content analysis: Relevance, structure, completeness</span>
-                    </li>
-                    <li className="flex gap-2 items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                      <span>Confidence: Body language, tone, and speaking pace</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
+            </div>
+          </Card>
+        )}
       </motion.div>
     </Layout>
   );
