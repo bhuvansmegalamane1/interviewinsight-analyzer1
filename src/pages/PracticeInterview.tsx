@@ -17,6 +17,7 @@ const PracticeInterview = () => {
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [interviewType, setInterviewType] = useState("general");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [isCountingDown, setIsCountingDown] = useState(false);
@@ -244,11 +245,8 @@ const PracticeInterview = () => {
         }
       });
       
+      console.log("Camera permission granted, stream obtained:", mediaStream);
       setStream(mediaStream);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
       
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       setAudioContext(audioCtx);
@@ -300,30 +298,43 @@ const PracticeInterview = () => {
       
       return mediaStream;
     } catch (err) {
+      console.error("Error requesting camera permission:", err);
       toast({
         title: "Camera access denied",
         description: "Please allow camera and microphone access to use the practice feature.",
         variant: "destructive",
       });
-      return null;
+      throw err;
     }
   };
 
   const startRecording = async () => {
-    setRecordingState("countdown");
-    setIsCountingDown(true);
-    setSpeechDetected(false);
-    setSpeechDuration(0);
-    setGrammarIssues([]);
-    
-    setTimeout(() => {
-      setIsCountingDown(false);
-      beginRecording();
-    }, 3000);
+    try {
+      await requestCameraPermission();
+      
+      setRecordingState("countdown");
+      setIsCountingDown(true);
+      setSpeechDetected(false);
+      setSpeechDuration(0);
+      setGrammarIssues([]);
+      
+      setTimeout(() => {
+        setIsCountingDown(false);
+        beginRecording();
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to start recording:", error);
+      toast({
+        title: "Error",
+        description: "Could not access camera or microphone. Please check permissions.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const beginRecording = async () => {
+  const beginRecording = () => {
     setRecordingState("recording");
+    setIsRecording(true);
     setRecordingTime(0);
     
     timerRef.current = window.setInterval(() => {
@@ -353,43 +364,43 @@ const PracticeInterview = () => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && recordingState === "recording") {
-      mediaRecorderRef.current.stop();
-      
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      
-      if (silenceTimer.current) {
-        clearTimeout(silenceTimer.current);
-        silenceTimer.current = null;
-      }
-      
-      if (postureCheckInterval.current) {
-        clearInterval(postureCheckInterval.current);
-        postureCheckInterval.current = null;
-      }
-      
-      if (expressionCheckInterval.current) {
-        clearInterval(expressionCheckInterval.current);
-        expressionCheckInterval.current = null;
-      }
-      
-      if (eyeContactCheckInterval.current) {
-        clearInterval(eyeContactCheckInterval.current);
-        eyeContactCheckInterval.current = null;
-      }
-      
-      if (grammarCheckInterval.current) {
-        clearInterval(grammarCheckInterval.current);
-        grammarCheckInterval.current = null;
-      }
-      
-      if (audioAnalysisInterval) {
-        clearInterval(audioAnalysisInterval);
-        setAudioAnalysisInterval(null);
-      }
+    console.log("Stopping recording...");
+    
+    setIsRecording(false);
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    if (silenceTimer.current) {
+      clearTimeout(silenceTimer.current);
+      silenceTimer.current = null;
+    }
+    
+    if (postureCheckInterval.current) {
+      clearInterval(postureCheckInterval.current);
+      postureCheckInterval.current = null;
+    }
+    
+    if (expressionCheckInterval.current) {
+      clearInterval(expressionCheckInterval.current);
+      expressionCheckInterval.current = null;
+    }
+    
+    if (eyeContactCheckInterval.current) {
+      clearInterval(eyeContactCheckInterval.current);
+      eyeContactCheckInterval.current = null;
+    }
+    
+    if (grammarCheckInterval.current) {
+      clearInterval(grammarCheckInterval.current);
+      grammarCheckInterval.current = null;
+    }
+    
+    if (audioAnalysisInterval) {
+      clearInterval(audioAnalysisInterval);
+      setAudioAnalysisInterval(null);
     }
   };
 
@@ -453,6 +464,8 @@ const PracticeInterview = () => {
     return { text: statusText, color: statusColor };
   };
 
+  const videoSrc = recordingState === "idle" ? "" : null;
+
   return (
     <Layout title="Practice Interview">
       <motion.div 
@@ -482,6 +495,7 @@ const PracticeInterview = () => {
                 </div>
               </Card>
             </div>
+            
             <div>
               <Card className="p-6 border border-neutral-200 dark:border-neutral-800 h-full flex flex-col">
                 <h3 className="text-lg font-medium mb-4">Interview Settings</h3>
@@ -623,13 +637,12 @@ const PracticeInterview = () => {
                 </div>
                 
                 <div className="aspect-video bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden relative">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  ></video>
+                  <VideoPlayer
+                    videoUrl={videoSrc || ""}
+                    onRecordingComplete={handleRecordingComplete}
+                    isRecording={isRecording}
+                    autoStart={false}
+                  />
                   
                   {recordingState === "recording" && (
                     <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 text-white py-1 px-3 rounded-full text-sm z-10">
