@@ -6,9 +6,10 @@ import { motion } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Upload } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Progress } from "@/components/ui/progress";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const UploadInterview = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -17,6 +18,8 @@ const UploadInterview = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [speechDetected, setSpeechDetected] = useState<boolean | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [analysisStage, setAnalysisStage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const navigate = useNavigate();
@@ -69,10 +72,15 @@ const UploadInterview = () => {
     }
     
     setFile(file);
+    
+    // Create a URL for the video preview
+    const url = URL.createObjectURL(file);
+    setVideoUrl(url);
   };
 
   const analyzeAudioContent = async (file: File): Promise<boolean> => {
     setIsAnalyzing(true);
+    setAnalysisStage("Speech detection");
     
     try {
       // Create an audio context
@@ -154,6 +162,7 @@ const UploadInterview = () => {
     
     try {
       // First analyze if the video contains speech
+      setAnalysisStage("Analyzing speech patterns");
       const hasSpokenContent = await analyzeAudioContent(file);
       
       // Simulate upload progress
@@ -167,21 +176,69 @@ const UploadInterview = () => {
         });
       }, 300);
       
-      // Store interview data with speech detection results
+      // AI analysis phases
+      const analysisPhases = [
+        "Extracting verbal content",
+        "Analyzing non-verbal cues",
+        "Evaluating speaking confidence",
+        "Processing sentiment analysis",
+        "Generating personalized feedback",
+        "Finalizing interview assessment"
+      ];
+      
+      // Simulate AI analysis with different stages
+      for (const phase of analysisPhases) {
+        setAnalysisStage(phase);
+        // Wait between 1-2 seconds for each phase
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+      }
+      
+      // Store interview data with speech detection results and enhanced AI analysis
       sessionStorage.setItem('interviewData', JSON.stringify({
         timestamp: new Date().toISOString(),
         hasSpokenContent: hasSpokenContent,
         fileSize: file.size,
         fileName: file.name,
         fileType: file.type,
-        speechPercentage: hasSpokenContent ? Math.floor(Math.random() * 50) + 30 : 5, // If speech detected, between 30-80%
-        speechDuration: hasSpokenContent ? Math.floor(Math.random() * 90) + 30 : 5, // If speech detected, between 30-120 seconds
-        grammarIssues: hasSpokenContent ? Math.floor(Math.random() * 10) : 20, // More grammar issues if no proper speech
+        speechPercentage: hasSpokenContent ? Math.floor(Math.random() * 50) + 30 : 5,
+        speechDuration: hasSpokenContent ? Math.floor(Math.random() * 90) + 30 : 5,
+        grammarIssues: hasSpokenContent ? Math.floor(Math.random() * 10) : 20,
         postureFeedback: Math.random() > 0.5 ? "good" : "slouching",
         eyeContactScore: hasSpokenContent ? Math.floor(Math.random() * 30) + 60 : Math.floor(Math.random() * 20) + 20,
         confidenceScore: hasSpokenContent ? Math.floor(Math.random() * 30) + 60 : Math.floor(Math.random() * 20) + 10,
         facialExpressions: hasSpokenContent ? (Math.random() > 0.6 ? "positive" : "neutral") : "negative",
         recordingDuration: Math.floor(Math.random() * 120) + 60, // 1-3 minutes
+        // Enhanced AI feedback
+        detailedFeedback: {
+          strengths: [
+            "Good articulation of technical concepts",
+            "Effectively communicated past experience",
+            "Used specific examples to support answers"
+          ],
+          improvements: [
+            "Consider reducing filler words (um, like)",
+            "Maintain more consistent eye contact",
+            "Structure answers with STAR method (Situation, Task, Action, Result)"
+          ],
+          keyInsights: [
+            "You appear most confident when discussing technical problems",
+            "Your engagement increases when talking about collaborative work",
+            "Tendency to speak faster when discussing challenging situations"
+          ]
+        },
+        // Sentiment analysis throughout the interview
+        sentimentTrack: [
+          { timepoint: "00:30", sentiment: "neutral", confidence: 0.75 },
+          { timepoint: "01:15", sentiment: "positive", confidence: 0.82 },
+          { timepoint: "02:00", sentiment: "neutral", confidence: 0.67 },
+          { timepoint: "02:45", sentiment: "positive", confidence: 0.91 }
+        ],
+        // AI-generated interview question recommendations
+        recommendedPractice: [
+          "Tell me about a situation where you had to adapt quickly to changes",
+          "How do you prioritize tasks when dealing with multiple deadlines?",
+          "Describe a situation where you had to collaborate with a difficult team member"
+        ]
       }));
       
       // Simulate API call/upload process
@@ -191,10 +248,10 @@ const UploadInterview = () => {
         setUploadProgress(100);
         
         toast({
-          title: "Upload successful",
+          title: "Analysis complete",
           description: hasSpokenContent 
-            ? "Your interview video has been uploaded and is being processed."
-            : "Your video was uploaded, but little to no speech was detected. The analysis may be limited.",
+            ? "Your interview was successfully analyzed by our AI systems."
+            : "Analysis complete, but limited speech was detected which may affect the quality of feedback.",
         });
         
         setTimeout(() => {
@@ -202,7 +259,7 @@ const UploadInterview = () => {
           const analysisId = Math.floor(Math.random() * 1000000);
           navigate(`/analysis/${analysisId}`);
         }, 1000);
-      }, 6000);
+      }, 2000);
     } catch (error) {
       console.error("Error during upload:", error);
       toast({
@@ -212,6 +269,7 @@ const UploadInterview = () => {
       });
       setIsUploading(false);
       setUploadProgress(0);
+      setAnalysisStage(null);
     }
   };
 
@@ -224,19 +282,19 @@ const UploadInterview = () => {
         className="max-w-3xl mx-auto py-8"
       >
         <Card className="p-8 border border-neutral-200 dark:border-neutral-800">
-          <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-all ${
-              isDragging 
-                ? "border-primary bg-primary/5" 
-                : file 
-                  ? "border-green-500 bg-green-50/5" 
-                  : "border-neutral-300 dark:border-neutral-700"
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            {!file ? (
+          {!videoUrl ? (
+            <div
+              className={`border-2 border-dashed rounded-lg p-12 text-center transition-all ${
+                isDragging 
+                  ? "border-primary bg-primary/5" 
+                  : file 
+                    ? "border-green-500 bg-green-50/5" 
+                    : "border-neutral-300 dark:border-neutral-700"
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <div className="space-y-4">
                 <Upload className="h-16 w-16 mx-auto text-neutral-400" />
                 <h3 className="text-xl font-medium">Upload your interview video</h3>
@@ -264,26 +322,20 @@ const UploadInterview = () => {
                   Supported formats: MP4, MOV, AVI, WEBM (max 500MB)
                 </p>
               </div>
-            ) : (
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                <VideoPlayer 
+                  videoUrl={videoUrl} 
+                  onRecordingComplete={() => {}}
+                />
+              </div>
+              
               <div className="space-y-4">
-                <div className="h-16 w-16 mx-auto bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-8 w-8 text-green-500"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium">Video ready for upload</h3>
+                <h3 className="text-xl font-medium">Video ready for analysis</h3>
                 <p className="text-neutral-500">
-                  {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  {file?.name} ({(file?.size ? (file.size / (1024 * 1024)).toFixed(2) : 0)} MB)
                 </p>
                 
                 {speechDetected !== null && (
@@ -304,6 +356,7 @@ const UploadInterview = () => {
                     onClick={() => {
                       setFile(null);
                       setSpeechDetected(null);
+                      setVideoUrl(null);
                     }}
                     disabled={isUploading || isAnalyzing}
                   >
@@ -313,7 +366,7 @@ const UploadInterview = () => {
                   {speechDetected === null && !isAnalyzing && (
                     <Button
                       variant="outline"
-                      onClick={() => analyzeAudioContent(file)}
+                      onClick={() => analyzeAudioContent(file!)}
                       disabled={isUploading}
                     >
                       Analyze Audio
@@ -324,12 +377,12 @@ const UploadInterview = () => {
                     onClick={handleUpload}
                     disabled={isUploading || isAnalyzing}
                   >
-                    {isUploading ? "Uploading..." : "Upload and Analyze"}
+                    {isUploading ? "Processing..." : "Analyze Interview"}
                   </Button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {isAnalyzing && (
             <div className="mt-6 space-y-2">
@@ -343,12 +396,24 @@ const UploadInterview = () => {
           )}
 
           {isUploading && (
-            <div className="mt-6 space-y-2">
+            <div className="mt-6 space-y-4">
               <div className="flex justify-between text-sm">
-                <span>Uploading...</span>
+                <span>{analysisStage || "Processing..."}</span>
                 <span>{uploadProgress}%</span>
               </div>
               <Progress value={uploadProgress} className="h-2" />
+              
+              <div className="text-sm text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                <h4 className="font-medium mb-2">AI Analysis in Progress</h4>
+                <p>Our advanced AI is analyzing multiple aspects of your interview:</p>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  <li>Verbal content and speech patterns</li>
+                  <li>Non-verbal cues and body language</li>
+                  <li>Tone, pace, and speech clarity</li>
+                  <li>Engagement and confidence indicators</li>
+                  <li>Question-response relevance</li>
+                </ul>
+              </div>
             </div>
           )}
           
@@ -357,15 +422,19 @@ const UploadInterview = () => {
             <ol className="space-y-2 text-sm text-neutral-600 dark:text-neutral-400">
               <li className="flex gap-2">
                 <span className="flex-shrink-0 h-5 w-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs">1</span>
-                <span>We'll process your video using our AI analysis engine</span>
+                <span>Our AI system analyzes your interview using natural language processing</span>
               </li>
               <li className="flex gap-2">
                 <span className="flex-shrink-0 h-5 w-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs">2</span>
-                <span>Your video will be analyzed for verbal and non-verbal cues</span>
+                <span>We detect verbal patterns, non-verbal cues, and response quality</span>
               </li>
               <li className="flex gap-2">
                 <span className="flex-shrink-0 h-5 w-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs">3</span>
-                <span>You'll receive detailed feedback and performance scores</span>
+                <span>You'll receive personalized feedback with specific improvement recommendations</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="flex-shrink-0 h-5 w-5 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-xs">4</span>
+                <span>Get AI-generated practice questions tailored to your performance areas</span>
               </li>
             </ol>
           </div>
