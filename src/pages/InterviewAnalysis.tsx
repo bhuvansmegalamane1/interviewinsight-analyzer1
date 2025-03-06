@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,8 +17,6 @@ const InterviewAnalysis = () => {
   const { data, isLoading } = useFakeAnalysisData(id);
   const { toast } = useToast();
   
-  // Simulate content detection from the session storage
-  // In a real app, this would come from actual audio analysis
   useEffect(() => {
     const sessionData = sessionStorage.getItem('interviewData');
     if (sessionData) {
@@ -27,11 +24,10 @@ const InterviewAnalysis = () => {
         const parsedData = JSON.parse(sessionData);
         setHasContent(parsedData.hasSpokenContent || false);
         
-        // Show a toast notification based on content detection
         if (!parsedData.hasSpokenContent) {
           toast({
-            title: "No speech detected",
-            description: "We've analyzed your visual presentation, but couldn't detect speech in your interview.",
+            title: "Limited Speech Detected",
+            description: "We could only analyze your visual presentation as minimal speech was detected.",
             variant: "warning",
           });
         }
