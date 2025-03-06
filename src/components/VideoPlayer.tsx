@@ -31,6 +31,7 @@ const VideoPlayer = ({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recorderStateRef = useRef<string>("inactive");
 
   const { toast } = useToast();
   
@@ -81,7 +82,12 @@ const VideoPlayer = ({
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
-      
+    };
+  }, [isPlaying]);
+
+  // Clean up resources on component unmount
+  useEffect(() => {
+    return () => {
       // Clean up recording resources
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         try {
@@ -94,13 +100,15 @@ const VideoPlayer = ({
       if (streamRef.current) {
         console.log("VideoPlayer: Cleaning up stream on unmount");
         streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
     };
-  }, [isPlaying, mediaRecorder]);
+  }, []);
   
   const startRecording = async () => {
     setRecordingError(null);
     chunksRef.current = []; // Reset chunks
+    setRecordedChunks([]);
     
     try {
       console.log("VideoPlayer: Requesting user media");
@@ -153,24 +161,26 @@ const VideoPlayer = ({
         throw new Error("No supported MIME type found for recording");
       }
       
-      // Create a new MediaRecorder instance
+      // Create a new MediaRecorder instance with more conservative settings
       const recorder = new MediaRecorder(stream, {
         mimeType: selectedMimeType,
-        videoBitsPerSecond: 2500000, // 2.5 Mbps
+        videoBitsPerSecond: 1000000, // 1 Mbps - more conservative
       });
       
       console.log("VideoPlayer: Created MediaRecorder", recorder);
+      recorderStateRef.current = "inactive";
       
       recorder.ondataavailable = (e: BlobEvent) => {
         console.log("VideoPlayer: Data available event", e.data.size);
         if (e.data && e.data.size > 0) {
           chunksRef.current.push(e.data);
+          setRecordedChunks(prev => [...prev, e.data]);
         }
       };
       
       recorder.onstart = () => {
         console.log("VideoPlayer: Recording started");
-        setRecordedChunks([]);
+        recorderStateRef.current = "recording";
         setRecording(true);
         
         toast({
@@ -181,59 +191,63 @@ const VideoPlayer = ({
       
       recorder.onstop = () => {
         console.log("VideoPlayer: Recording stopped, chunks:", chunksRef.current.length);
+        recorderStateRef.current = "inactive";
         setRecording(false);
         
-        if (chunksRef.current.length > 0 && chunksRef.current.some(chunk => chunk.size > 0)) {
-          const recordedBlob = new Blob(chunksRef.current, { type: selectedMimeType });
-          console.log("VideoPlayer: Created blob", recordedBlob.size);
-          
-          // Store in local storage (using URL)
-          const videoUrl = URL.createObjectURL(recordedBlob);
-          localStorage.setItem('latestInterviewRecording', videoUrl);
-          
-          // Store the metadata in sessionStorage
-          const recordingData = {
-            timestamp: new Date().toISOString(),
-            blobType: recordedBlob.type,
-            size: recordedBlob.size,
-            duration: recorder.videoBitsPerSecond ? Math.floor(recordedBlob.size / (recorder.videoBitsPerSecond / 8)) : 0,
-            hasSpokenContent: true // Simplified for mock purposes
-          };
-          
-          console.log("VideoPlayer: Saving interview data", recordingData);
-          sessionStorage.setItem('interviewData', JSON.stringify(recordingData));
-          
-          // Call the callback if provided
-          if (onRecordingComplete) {
-            console.log("VideoPlayer: Calling onRecordingComplete callback");
-            onRecordingComplete(recordedBlob);
+        // Add a small delay to ensure all chunks are processed
+        setTimeout(() => {
+          if (chunksRef.current.length > 0 && chunksRef.current.some(chunk => chunk.size > 0)) {
+            const recordedBlob = new Blob(chunksRef.current, { type: selectedMimeType });
+            console.log("VideoPlayer: Created blob", recordedBlob.size);
+            
+            // Store in local storage (using URL)
+            const videoUrl = URL.createObjectURL(recordedBlob);
+            localStorage.setItem('latestInterviewRecording', videoUrl);
+            
+            // Store the metadata in sessionStorage
+            const recordingData = {
+              timestamp: new Date().toISOString(),
+              blobType: recordedBlob.type,
+              size: recordedBlob.size,
+              duration: recorder.videoBitsPerSecond ? Math.floor(recordedBlob.size / (recorder.videoBitsPerSecond / 8)) : 0,
+              hasSpokenContent: true // Simplified for mock purposes
+            };
+            
+            console.log("VideoPlayer: Saving interview data", recordingData);
+            sessionStorage.setItem('interviewData', JSON.stringify(recordingData));
+            
+            // Call the callback if provided
+            if (onRecordingComplete) {
+              console.log("VideoPlayer: Calling onRecordingComplete callback");
+              onRecordingComplete(recordedBlob);
+            }
+          } else {
+            console.error("VideoPlayer: No data recorded");
+            const errorMsg = "No data was recorded. Please try again.";
+            setRecordingError(errorMsg);
+            if (onError) {
+              onError(errorMsg);
+            }
+            
+            toast({
+              title: "Recording Error",
+              description: errorMsg,
+              variant: "destructive",
+            });
           }
-        } else {
-          console.error("VideoPlayer: No data recorded");
-          const errorMsg = "No data was recorded. Please try again.";
-          setRecordingError(errorMsg);
-          if (onError) {
-            onError(errorMsg);
-          }
           
-          toast({
-            title: "Recording Error",
-            description: errorMsg,
-            variant: "destructive",
-          });
-        }
-        
-        // Reset recorder and streams
-        setMediaRecorder(null);
-        
-        // Reset video source to the original video URL if provided
-        if (videoRef.current) {
-          videoRef.current.srcObject = null;
-          if (videoUrl) {
-            videoRef.current.src = videoUrl;
-            videoRef.current.muted = false;
+          // Reset recorder and streams
+          setMediaRecorder(null);
+          
+          // Reset video source to the original video URL if provided
+          if (videoRef.current) {
+            videoRef.current.srcObject = null;
+            if (videoUrl) {
+              videoRef.current.src = videoUrl;
+              videoRef.current.muted = false;
+            }
           }
-        }
+        }, 500);
       };
       
       recorder.onerror = (event) => {
@@ -251,9 +265,15 @@ const VideoPlayer = ({
         });
       };
       
-      // Start recording
-      setMediaRecorder(recorder);
+      // Set up timer to collect data at intervals
       recorder.start(1000); // Collect chunks every second
+      setMediaRecorder(recorder);
+      
+      // Make sure we record for at least 3 seconds before allowing to stop
+      // This helps ensure we get some data
+      setTimeout(() => {
+        console.log("VideoPlayer: Setting minimum recording time");
+      }, 3000);
       
     } catch (error) {
       console.error("VideoPlayer: Error starting recording:", error);
@@ -273,18 +293,21 @@ const VideoPlayer = ({
   
   const stopRecording = () => {
     console.log("VideoPlayer: Stopping recording, mediaRecorder state:", mediaRecorder?.state);
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    
+    // Only stop if we're actually recording
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
       try {
-        mediaRecorder.stop();
+        // Request a final data chunk before stopping
+        mediaRecorder.requestData();
         
-        // Stop all tracks from the stream
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => {
-            console.log("VideoPlayer: Stopping track", track.kind, track.id);
-            track.stop();
-          });
-          streamRef.current = null;
-        }
+        // Short delay to ensure we get the final data
+        setTimeout(() => {
+          try {
+            mediaRecorder.stop();
+          } catch (err) {
+            console.error("Error stopping recorder after delay:", err);
+          }
+        }, 200);
       } catch (error) {
         console.error("Error stopping recording:", error);
         
@@ -294,9 +317,19 @@ const VideoPlayer = ({
           variant: "destructive",
         });
       }
+    } else {
+      // If mediaRecorder is not in recording state, just clean up
+      setRecording(false);
     }
     
-    setRecording(false);
+    // Stop all tracks from the stream regardless of recorder state
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        console.log("VideoPlayer: Stopping track", track.kind, track.id);
+        track.stop();
+      });
+      streamRef.current = null;
+    }
   };
   
   const togglePlay = () => {
