@@ -31,8 +31,8 @@ const InterviewAnalysis = () => {
         if (!parsedData.hasSpokenContent) {
           toast({
             title: "No speech detected",
-            description: "We couldn't analyze your interview without verbal content.",
-            variant: "destructive",
+            description: "We've analyzed your visual presentation, but couldn't detect speech in your interview.",
+            variant: "warning",
           });
         }
       } catch (e) {
@@ -110,23 +110,45 @@ const InterviewAnalysis = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="text-center py-3">
-                    <div className="text-amber-500 mb-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2">
-                        <path d="M12 9v4"/>
-                        <path d="M12 17h.01"/>
-                        <path d="M3.44 19h17.12a2 2 0 0 0 1.72-3.01L13.8 4.1a2 2 0 0 0-3.6 0L1.72 15.99A2 2 0 0 0 3.44 19z"/>
-                      </svg>
-                      <span className="font-medium">No Speech Detected</span>
+                  <div>
+                    <div className="bg-amber-50 dark:bg-amber-950/30 text-center p-3 mb-3 rounded-md">
+                      <div className="text-amber-500 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2">
+                          <path d="M12 9v4"/>
+                          <path d="M12 17h.01"/>
+                          <path d="M3.44 19h17.12a2 2 0 0 0 1.72-3.01L13.8 4.1a2 2 0 0 0-3.6 0L1.72 15.99A2 2 0 0 0 3.44 19z"/>
+                        </svg>
+                        <span className="font-medium">No Speech Detected</span>
+                      </div>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        We analyzed your visual presentation, but couldn't detect speech. Verbal scores are marked as 0.
+                      </p>
                     </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      We couldn't detect any speech in your interview. Scores are unavailable without verbal content to analyze.
-                    </p>
-                    <div className="mt-4 text-center">
-                      <span className="text-xs text-neutral-500">Overall Score</span>
-                      <div className="flex items-end gap-2 justify-center">
-                        <span className="text-4xl font-medium">0</span>
+                    
+                    <div>
+                      <span className="text-xs text-neutral-500">Overall Score (Visual Only)</span>
+                      <div className="flex items-end gap-2">
+                        <span className="text-4xl font-medium">{data.overallScore}</span>
                         <span className="text-sm text-neutral-500 mb-1">/100</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 mt-4">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Verbal Communication</span>
+                        <span className="font-medium text-neutral-400">0/100</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Non-verbal Cues</span>
+                        <span className="font-medium">{data.scores.nonVerbal}/100</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Content Quality</span>
+                        <span className="font-medium text-neutral-400">0/100</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Engagement</span>
+                        <span className="font-medium">{data.scores.engagement}/100</span>
                       </div>
                     </div>
                   </div>
@@ -155,7 +177,7 @@ const InterviewAnalysis = () => {
             </TabsContent>
             
             <TabsContent value="feedback" className="mt-0">
-              <FeedbackSection data={data} />
+              <FeedbackSection data={data} hasContent={hasContent} />
             </TabsContent>
           </Tabs>
         </motion.div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AnalysisData } from "@/types/analysis";
 
@@ -26,10 +27,10 @@ export const useFakeAnalysisData = (id?: string) => {
           
           // Analyze facial expressions and posture even without speech
           const visualAnalysis = {
-            eyeContactScore: Math.floor(Math.random() * 30) + 60, // 60-90 range
-            postureFeedback: "good",
-            facialExpressions: "neutral",
-            confidenceScore: Math.floor(Math.random() * 20) + 70 // 70-90 range
+            eyeContactScore: sessionData.eyeContactScore || Math.floor(Math.random() * 30) + 60, // 60-90 range
+            postureFeedback: sessionData.postureFeedback || "good",
+            facialExpressions: sessionData.facialExpressions || "neutral",
+            confidenceScore: sessionData.confidenceScore || Math.floor(Math.random() * 20) + 70 // 70-90 range
           };
           
           // If no speech detected, focus on visual aspects
@@ -53,7 +54,7 @@ export const useFakeAnalysisData = (id?: string) => {
                 relevance: 0,
                 confidence: visualAnalysis.confidenceScore
               },
-              summary: "While no speech was detected in your video, we analyzed your non-verbal communication. Your body language and facial expressions show good potential for professional interactions. Consider practicing speaking aloud to complement your positive visual presentation.",
+              summary: "While no speech was detected in your video, we analyzed your non-verbal communication. Your body language and facial expressions show good potential for professional interactions. Consider practicing speaking aloud to complement your visual presentation.",
               strengths: [
                 "Good posture and professional appearance",
                 "Appropriate facial expressions",
@@ -397,23 +398,23 @@ export const useFakeAnalysisData = (id?: string) => {
           console.log("useFakeAnalysisData: No interview data found in session storage, using default values");
           hasContent = false; // No data means we can't confirm speech
 
-          // Poor score for videos without content or silence
+          // Default scores for videos without content
           setData({
             id: id || "123456",
             videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-young-female-vlogger-recording-her-podcast-42665-large.mp4",
             overallScore: 25,
             scores: {
-              verbal: 10,
+              verbal: 0,  // No verbal without speech
               nonVerbal: 32,
-              content: 12,
+              content: 0,  // No content without speech
               engagement: 15
             },
             detailedScores: {
-              clarity: 8,
-              conciseness: 15,
+              clarity: 0,
+              conciseness: 0,
               eyeContact: 38,
               posture: 42,
-              relevance: 5,
+              relevance: 0,
               confidence: 22
             },
             summary: "Our analysis detected minimal or no speech during your interview. This could be due to technical issues with your microphone, extreme nervousness affecting your ability to speak, or not engaging with the interview questions. An interview requires active verbal participation to be effective.",

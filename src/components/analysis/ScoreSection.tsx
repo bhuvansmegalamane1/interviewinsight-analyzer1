@@ -12,32 +12,20 @@ interface ScoreSectionProps {
 
 const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
   // For no content case, create data with all zeros
-  const mainScores = hasContent ? [
+  const mainScores = [
     { name: "Verbal", value: data.scores.verbal },
     { name: "Non-verbal", value: data.scores.nonVerbal },
     { name: "Content", value: data.scores.content },
     { name: "Engagement", value: data.scores.engagement },
-  ] : [
-    { name: "Verbal", value: 0 },
-    { name: "Non-verbal", value: 0 },
-    { name: "Content", value: 0 },
-    { name: "Engagement", value: 0 },
   ];
   
-  const detailedScores = hasContent ? [
+  const detailedScores = [
     { name: "Clarity", value: data.detailedScores.clarity },
     { name: "Conciseness", value: data.detailedScores.conciseness },
     { name: "Eye Contact", value: data.detailedScores.eyeContact },
     { name: "Posture", value: data.detailedScores.posture },
     { name: "Relevance", value: data.detailedScores.relevance },
     { name: "Confidence", value: data.detailedScores.confidence },
-  ] : [
-    { name: "Clarity", value: 0 },
-    { name: "Conciseness", value: 0 },
-    { name: "Eye Contact", value: 0 },
-    { name: "Posture", value: 0 },
-    { name: "Relevance", value: 0 },
-    { name: "Confidence", value: 0 },
   ];
   
   // Colors for the pie chart
@@ -66,10 +54,9 @@ const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
                 <path d="M12 17h.01"/>
                 <path d="M3.44 19h17.12a2 2 0 0 0 1.72-3.01L13.8 4.1a2 2 0 0 0-3.6 0L1.72 15.99A2 2 0 0 0 3.44 19z"/>
               </svg>
-              <h3 className="text-xl font-medium mb-3">No Performance Data Available</h3>
+              <h3 className="text-xl font-medium mb-3">No Speech Detected</h3>
               <p className="text-neutral-600 dark:text-neutral-400 mb-6">
-                We couldn't analyze your performance because no speech was detected in your interview. 
-                To receive meaningful feedback, please ensure:
+                We couldn't detect any speech in your interview. We've analyzed your non-verbal cues, but for a complete analysis:
               </p>
               <ul className="text-left space-y-2 mb-6">
                 <li className="flex gap-2 items-start">
@@ -77,33 +64,33 @@ const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
                     <polyline points="9 11 12 14 22 4"></polyline>
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                   </svg>
-                  <span>Your microphone is properly connected and working</span>
+                  <span>Ensure your microphone is properly connected and working</span>
                 </li>
                 <li className="flex gap-2 items-start">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary flex-shrink-0 mt-1">
                     <polyline points="9 11 12 14 22 4"></polyline>
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                   </svg>
-                  <span>You're speaking clearly enough for the system to detect</span>
+                  <span>Speak clearly throughout your interview</span>
                 </li>
                 <li className="flex gap-2 items-start">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary flex-shrink-0 mt-1">
                     <polyline points="9 11 12 14 22 4"></polyline>
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                   </svg>
-                  <span>You're actually responding to the interview questions</span>
+                  <span>Make sure your video has audio enabled</span>
                 </li>
               </ul>
               <p className="text-neutral-600 dark:text-neutral-400">
-                Try recording another interview while actively speaking to receive a full analysis of your performance.
+                Below you'll find our analysis of your visual presentation and body language.
               </p>
             </div>
           </Card>
         </motion.div>
 
-        {/* Additional section to show zero scores in charts for visual reference */}
+        {/* Show scores based on what we could analyze */}
         <motion.div variants={fadeIn("up", 0.4)}>
-          <h2 className="text-xl font-medium mb-4">Performance Metrics (No Data)</h2>
+          <h2 className="text-xl font-medium mb-4">Non-verbal Performance Metrics</h2>
           <Card className="p-6 border border-neutral-200 dark:border-neutral-800">
             <h3 className="text-lg font-medium mb-4">Main Categories</h3>
             <div className="h-[350px]">
@@ -114,13 +101,13 @@ const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name }) => `${name}: 0%`}
+                    label={({ name, value }) => `${name}: ${value}/100`}
                     outerRadius={120}
                     fill="#8884d8"
                     dataKey="value"
                   >
                     {mainScores.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill="#cccccc" />
+                      <Cell key={`cell-${index}`} fill={entry.value > 0 ? COLORS[index % COLORS.length] : '#cccccc'} />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
@@ -154,7 +141,7 @@ const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
                   dataKey="value"
                 >
                   {mainScores.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={entry.value > 0 ? COLORS[index % COLORS.length] : '#cccccc'} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -182,7 +169,7 @@ const ScoreSection = ({ data, hasContent }: ScoreSectionProps) => {
                   dataKey="value"
                 >
                   {detailedScores.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={entry.value > 0 ? COLORS[index % COLORS.length] : '#cccccc'} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
