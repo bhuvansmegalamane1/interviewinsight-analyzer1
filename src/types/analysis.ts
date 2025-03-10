@@ -88,6 +88,32 @@ export interface AnalysisData {
     domainExpertise: number;
     score: number;
   };
+  // Advanced analysis capabilities
+  contextRelevance?: {
+    isInterviewContent: boolean;
+    contextConfidence: number;
+    relevantTerms: string[];
+    contextualScore: number;
+  };
+  advancedInsights?: {
+    keyPoints: string[];
+    improvementAreas: string[];
+    communicationStyle: string;
+    insightScore: number;
+  };
+  emotionalAnalysis?: {
+    dominantEmotions: string[];
+    emotionalVariability: number;
+    stressCues: string[];
+    confidenceCues: string[];
+    score: number;
+  };
+  interactionQuality?: {
+    responsiveness: number;
+    listeningSkills: number;
+    questionHandling: number;
+    score: number;
+  };
   privacy: {
     dataRetentionPeriod: string;
     anonymizationLevel: 'full' | 'partial' | 'none';

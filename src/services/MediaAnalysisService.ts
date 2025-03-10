@@ -1,4 +1,11 @@
+
 import { pipeline } from '@huggingface/transformers';
+
+// Type definition for custom pipeline options not covered by the library's types
+interface CustomPipelineOptions {
+  chunk_length_s: number;
+  [key: string]: any;
+}
 
 export class MediaAnalysisService {
   private static transcriber: any = null;
@@ -21,6 +28,14 @@ export class MediaAnalysisService {
                'metrics', 'KPI', 'ROI', 'segmentation', 'targeting', 'funnel']
   };
 
+  // Contextual keywords for interview detection
+  private static interviewKeywords = [
+    'interview', 'job', 'career', 'position', 'role', 'hiring', 'candidate', 
+    'experience', 'skills', 'qualification', 'background', 'resume', 'cv',
+    'tell me about yourself', 'strengths', 'weaknesses', 'why should we hire',
+    'previous experience', 'team work', 'challenge', 'leadership', 'achievement'
+  ];
+
   static async initialize() {
     if (!this.initialized) {
       try {
@@ -30,10 +45,32 @@ export class MediaAnalysisService {
         this.transcriber = await pipeline(
           'automatic-speech-recognition',
           'openai/whisper-tiny.en',
-          { chunk_length_s: 30 } as any
+          { chunk_length_s: 30 } as CustomPipelineOptions
         );
         
         console.log('MediaAnalysisService: Transcriber initialized');
+        
+        // Initialize sentiment analyzer for tone analysis
+        try {
+          this.sentimentAnalyzer = await pipeline(
+            'sentiment-analysis',
+            'distilbert-base-uncased-finetuned-sst-2-english'
+          );
+          console.log('MediaAnalysisService: Sentiment analyzer initialized');
+        } catch (error) {
+          console.warn('MediaAnalysisService: Failed to initialize sentiment analyzer:', error);
+        }
+        
+        // Initialize text classifier for context detection
+        try {
+          this.textClassifier = await pipeline(
+            'text-classification',
+            'facebook/bart-large-mnli'
+          );
+          console.log('MediaAnalysisService: Text classifier initialized');
+        } catch (error) {
+          console.warn('MediaAnalysisService: Failed to initialize text classifier:', error);
+        }
         
         this.initialized = true;
         console.log('MediaAnalysisService: Initialized successfully');
@@ -42,6 +79,123 @@ export class MediaAnalysisService {
         throw error;
       }
     }
+  }
+
+  // Detect if the content is likely from an interview
+  private static async detectInterviewContext(text: string): Promise<{
+    isInterview: boolean;
+    confidence: number;
+    relevantTerms: string[];
+  }> {
+    if (!text || text.length < 10) {
+      return { isInterview: false, confidence: 0, relevantTerms: [] };
+    }
+    
+    // Count occurrences of interview-related keywords
+    const lowerText = text.toLowerCase();
+    const relevantTerms: string[] = [];
+    
+    for (const keyword of this.interviewKeywords) {
+      if (lowerText.includes(keyword.toLowerCase())) {
+        relevantTerms.push(keyword);
+      }
+    }
+    
+    // Calculate confidence based on keyword density
+    const wordCount = text.split(/\s+/).length;
+    const keywordDensity = relevantTerms.length / (wordCount > 0 ? wordCount : 1);
+    const confidence = Math.min(100, keywordDensity * 500); // Scale to a reasonable percentage
+    
+    // Advanced classification if text classifier is available
+    if (this.textClassifier && text.length > 50) {
+      try {
+        // Try to classify the text against interview context
+        const result = await this.textClassifier(text, {
+          hypothesis: "This is content from a job interview.",
+        });
+        
+        if (Array.isArray(result) && result.length > 0) {
+          const classificationScore = result[0].score || 0;
+          // Combine both methods for better accuracy
+          const combinedConfidence = (confidence + classificationScore * 100) / 2;
+          return {
+            isInterview: combinedConfidence > 40,
+            confidence: combinedConfidence,
+            relevantTerms
+          };
+        }
+      } catch (error) {
+        console.warn("Interview context classification failed:", error);
+      }
+    }
+    
+    return {
+      isInterview: confidence > 30,
+      confidence,
+      relevantTerms
+    };
+  }
+
+  // Analyze sentiment and emotion in speech
+  private static async analyzeSentiment(text: string): Promise<{
+    sentiment: 'positive' | 'negative' | 'neutral';
+    confidence: number;
+    emotionalTone: string;
+  }> {
+    if (!this.sentimentAnalyzer || !text || text.length < 5) {
+      return { 
+        sentiment: 'neutral', 
+        confidence: 0,
+        emotionalTone: 'undetermined'
+      };
+    }
+    
+    try {
+      const result = await this.sentimentAnalyzer(text);
+      if (Array.isArray(result) && result.length > 0) {
+        const label = result[0].label?.toLowerCase() || 'neutral';
+        const score = result[0].score || 0.5;
+        
+        // Determine emotional tone based on words and phrases
+        const emotionalKeywords = {
+          enthusiastic: ['excited', 'passionate', 'love', 'enjoy', 'thrilled'],
+          confident: ['confident', 'sure', 'certain', 'definitely', 'absolutely'],
+          hesitant: ['maybe', 'perhaps', 'might', 'possibly', 'unsure'],
+          nervous: ['nervous', 'worried', 'concern', 'afraid', 'stress']
+        };
+        
+        let dominantEmotion = 'neutral';
+        let highestCount = 0;
+        
+        const lowerText = text.toLowerCase();
+        for (const [emotion, keywords] of Object.entries(emotionalKeywords)) {
+          const count = keywords.filter(word => lowerText.includes(word)).length;
+          if (count > highestCount) {
+            highestCount = count;
+            dominantEmotion = emotion;
+          }
+        }
+        
+        // Default to sentiment if no emotion is detected
+        const emotionalTone = highestCount > 0 ? dominantEmotion : 
+          (label === 'positive' ? 'confident' : 
+          (label === 'negative' ? 'nervous' : 'neutral'));
+          
+        return {
+          sentiment: label as 'positive' | 'negative' | 'neutral',
+          confidence: score * 100,
+          emotionalTone
+        };
+      }
+    } catch (error) {
+      console.warn("Sentiment analysis failed:", error);
+    }
+    
+    return { 
+      sentiment: 'neutral', 
+      confidence: 50,
+      emotionalTone: 'neutral'
+    };
   }
 
   static async analyzeSpeech(audioBlob: Blob): Promise<{
@@ -76,6 +230,16 @@ export class MediaAnalysisService {
       completeness: number;
       score: number;
     };
+    contextRelevance: {
+      isInterviewContent: boolean;
+      contextConfidence: number;
+      relevantTerms: string[];
+    };
+    advancedInsights: {
+      keyPoints: string[];
+      improvementAreas: string[];
+      communicationStyle: string;
+    };
   }> {
     try {
       await this.initialize();
@@ -86,7 +250,7 @@ export class MediaAnalysisService {
       console.log('MediaAnalysisService: Starting speech transcription...');
       
       const result = await this.transcriber(arrayBuffer, 
-        { chunk_length_s: 30 } as any
+        { chunk_length_s: 30 } as CustomPipelineOptions
       );
       
       const transcription = result.text.trim();
@@ -245,6 +409,70 @@ export class MediaAnalysisService {
       else if (confidenceScore >= 60) speechQuality = 'good';
       else if (confidenceScore >= 30) speechQuality = 'fair';
       
+      // Advanced context detection - determine if the content is interview-related
+      const contextAnalysis = await this.detectInterviewContext(transcription);
+      
+      // Advanced sentiment analysis
+      const sentimentAnalysis = await this.analyzeSentiment(transcription);
+      
+      // Extract key points from the transcription (simplified implementation)
+      const keyPoints: string[] = [];
+      // Extract sentences that seem important based on keywords and position
+      const importantSentences = sentences.filter(sentence => {
+        const lowerSentence = sentence.toLowerCase();
+        const hasSignificantWord = ['important', 'key', 'main', 'significant', 'crucial', 'essential']
+          .some(word => lowerSentence.includes(word));
+        
+        // Consider first and last sentences often contain important information
+        const isIntroOrConclusion = sentences.indexOf(sentence) === 0 || 
+                                  sentences.indexOf(sentence) === sentences.length - 1;
+                                  
+        return hasSignificantWord || isIntroOrConclusion;
+      });
+      
+      // Add up to 3 key points
+      importantSentences.slice(0, 3).forEach(sentence => {
+        if (sentence.length > 10) {
+          keyPoints.push(sentence.trim());
+        }
+      });
+      
+      // Identify improvement areas
+      const improvementAreas: string[] = [];
+      
+      if (fillerWordRatio > 0.05) {
+        improvementAreas.push("Reduce filler words like 'um', 'uh', 'like'");
+      }
+      
+      if (wordsPerMinute > 180) {
+        improvementAreas.push("Consider speaking more slowly for better clarity");
+      } else if (wordsPerMinute < 120 && wordCount > 30) {
+        improvementAreas.push("Consider increasing your speaking pace to maintain engagement");
+      }
+      
+      if (coherenceScore < 50 && wordCount > 50) {
+        improvementAreas.push("Use more transition words to improve the flow of your speech");
+      }
+      
+      if (vocabularyDiversity < 0.6 && wordCount > 50) {
+        improvementAreas.push("Try to use a more diverse vocabulary");
+      }
+      
+      // Determine communication style
+      let communicationStyle = "Balanced";
+      
+      if (sentimentAnalysis.sentiment === 'positive' && enthusiasmScore > 5) {
+        communicationStyle = "Enthusiastic";
+      } else if (sentimentAnalysis.confidence > 70) {
+        communicationStyle = "Confident";
+      } else if (fillerWordRatio > 0.08) {
+        communicationStyle = "Hesitant";
+      } else if (coherenceScore > 70 && organizationScore > 70) {
+        communicationStyle = "Structured";
+      } else if (sentimentAnalysis.sentiment === 'negative') {
+        communicationStyle = "Reserved";
+      }
+      
       console.log('MediaAnalysisService: Comprehensive analysis results:', {
         transcription: transcription.substring(0, 100) + '...',
         wordCount,
@@ -265,7 +493,9 @@ export class MediaAnalysisService {
           completeness: completenessScore
         },
         confidenceScore,
-        speechQuality
+        speechQuality,
+        contextRelevance: contextAnalysis,
+        communicationStyle
       });
       
       return {
@@ -299,6 +529,16 @@ export class MediaAnalysisService {
           coherence: Math.round(coherenceScore),
           completeness: Math.round(completenessScore),
           score: Math.round(structureScore)
+        },
+        contextRelevance: {
+          isInterviewContent: contextAnalysis.isInterview,
+          contextConfidence: contextAnalysis.confidence,
+          relevantTerms: contextAnalysis.relevantTerms
+        },
+        advancedInsights: {
+          keyPoints,
+          improvementAreas,
+          communicationStyle
         }
       };
     } catch (error) {
@@ -334,6 +574,16 @@ export class MediaAnalysisService {
           coherence: 0,
           completeness: 0,
           score: 0
+        },
+        contextRelevance: {
+          isInterviewContent: false,
+          contextConfidence: 0,
+          relevantTerms: []
+        },
+        advancedInsights: {
+          keyPoints: [],
+          improvementAreas: ["Unable to analyze speech due to an error."],
+          communicationStyle: "Undetermined"
         }
       };
     }
