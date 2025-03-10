@@ -43,4 +43,11 @@ export interface AnalysisData {
       appearance: string;
     };
   };
+  // New fields for enhanced analysis
+  transcription?: string;
+  wordCount?: number;
+  fillerWordCount?: number;
+  speechDuration?: number;
+  confidenceScore?: number;
+  speechQuality?: 'poor' | 'fair' | 'good' | 'excellent';
 }

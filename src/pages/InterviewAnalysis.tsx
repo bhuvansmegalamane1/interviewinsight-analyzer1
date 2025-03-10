@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,10 +11,12 @@ import VideoPlayer from "@/components/VideoPlayer";
 import { useFakeAnalysisData } from "@/hooks/useFakeAnalysisData";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 const InterviewAnalysis = () => {
   const { id } = useParams<{ id: string }>();
   const [hasContent, setHasContent] = useState(false);
+  const [speechQuality, setSpeechQuality] = useState<'poor' | 'fair' | 'good' | 'excellent'>('poor');
   const { data, isLoading } = useFakeAnalysisData(id);
   const { toast } = useToast();
   
@@ -23,11 +26,18 @@ const InterviewAnalysis = () => {
       try {
         const parsedData = JSON.parse(sessionData);
         setHasContent(parsedData.hasSpokenContent || false);
+        setSpeechQuality(parsedData.speechQuality || 'poor');
         
         if (!parsedData.hasSpokenContent) {
           toast({
             title: "Limited Speech Detected",
             description: "We could only analyze your visual presentation as minimal speech was detected.",
+            variant: "warning",
+          });
+        } else if (parsedData.speechQuality === 'poor') {
+          toast({
+            title: "Speech Quality Issues",
+            description: "Your speech was detected but had quality issues. See the analysis for details.",
             variant: "warning",
           });
         }
@@ -73,7 +83,19 @@ const InterviewAnalysis = () => {
           
           <div>
             <Card className="p-6 border border-neutral-200 dark:border-neutral-800 h-full shadow-sm hover:shadow-md transition-shadow duration-300">
-              <h3 className="text-lg font-medium mb-4">Overview</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Overview</h3>
+                {hasContent && (
+                  <Badge className={`
+                    ${speechQuality === 'excellent' ? 'bg-green-500' : ''}
+                    ${speechQuality === 'good' ? 'bg-blue-500' : ''}
+                    ${speechQuality === 'fair' ? 'bg-amber-500' : ''}
+                    ${speechQuality === 'poor' ? 'bg-red-500' : ''}
+                  `}>
+                    {speechQuality} speech
+                  </Badge>
+                )}
+              </div>
               
               <div className="space-y-6">
                 {hasContent ? (
@@ -104,6 +126,17 @@ const InterviewAnalysis = () => {
                         <span className="font-medium">{data.scores.engagement}/100</span>
                       </div>
                     </div>
+                    
+                    {data.transcription && (
+                      <div className="mt-4 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-md border border-neutral-200 dark:border-neutral-800">
+                        <h4 className="text-sm font-medium mb-2">Transcription Excerpt</h4>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 italic">
+                          "{data.transcription.length > 100 
+                            ? data.transcription.substring(0, 100) + '...' 
+                            : data.transcription}"
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div>
@@ -166,6 +199,9 @@ const InterviewAnalysis = () => {
             <TabsList className="mb-6">
               <TabsTrigger value="scores">Performance Scores</TabsTrigger>
               <TabsTrigger value="feedback">Detailed Feedback</TabsTrigger>
+              {hasContent && (
+                <TabsTrigger value="speech">Speech Analysis</TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="scores" className="mt-0">
@@ -175,6 +211,55 @@ const InterviewAnalysis = () => {
             <TabsContent value="feedback" className="mt-0">
               <FeedbackSection data={data} hasContent={hasContent} />
             </TabsContent>
+            
+            {hasContent && (
+              <TabsContent value="speech" className="mt-0">
+                <Card className="p-6">
+                  <h3 className="text-lg font-medium mb-4">Speech Analysis</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Speech Metrics</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Total Words</span>
+                          <span className="font-medium">{data.wordCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Speech Duration</span>
+                          <span className="font-medium">{Math.round(data.speechDuration || 0)}s</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Words Per Minute</span>
+                          <span className="font-medium">
+                            {data.speechDuration > 0 
+                              ? Math.round((data.wordCount || 0) / (data.speechDuration / 60)) 
+                              : 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Filler Words</span>
+                          <span className="font-medium">{data.fillerWordCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span>Confidence Score</span>
+                          <span className="font-medium">{data.confidenceScore || 0}/100</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-3">Full Transcription</h4>
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-md border border-neutral-200 dark:border-neutral-800 max-h-60 overflow-y-auto">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                          {data.transcription || "No transcription available."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
         </motion.div>
       </motion.div>

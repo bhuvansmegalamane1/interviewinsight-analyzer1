@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AnalysisData } from "@/types/analysis";
 import { MediaAnalysisService } from "@/services/MediaAnalysisService";
@@ -24,48 +25,62 @@ export const useFakeAnalysisData = (id?: string) => {
         // Convert the video blob to audio for analysis
         const videoBlob = await fetch(sessionData.videoUrl).then(r => r.blob());
         
-        // Analyze speech content
+        // Analyze speech content with enhanced analysis
         const speechAnalysis = await MediaAnalysisService.analyzeSpeech(videoBlob);
         console.log("Speech analysis results:", speechAnalysis);
         
         // Update session data with analysis results
         const hasContent = speechAnalysis.hasSpokenContent;
         const speechDuration = speechAnalysis.speechDuration;
-        const speechPercentage = (speechDuration / (sessionData.recordingDuration || 1)) * 100;
+        const speechQuality = speechAnalysis.speechQuality;
+        const confidenceScore = speechAnalysis.confidenceScore;
+        
+        // Store enhanced analysis in session storage for future use
+        sessionStorage.setItem('interviewData', JSON.stringify({
+          ...sessionData,
+          hasSpokenContent: hasContent,
+          speechDuration: speechDuration,
+          wordCount: speechAnalysis.wordCount,
+          fillerWordCount: speechAnalysis.fillerWordCount,
+          speechQuality: speechQuality,
+          confidenceScore: confidenceScore,
+          transcription: speechAnalysis.transcription
+        }));
         
         // Calculate scores based on actual analysis
-        const verbalScore = hasContent ? Math.min(100, (speechAnalysis.wordCount * 5)) : 0;
+        const verbalScore = hasContent ? Math.min(100, Math.max(0, confidenceScore)) : 0;
         const eyeContactScore = Math.floor(Math.random() * 30) + 60; // This would come from actual video analysis
-        const confidenceScore = hasContent ? Math.floor(Math.random() * 20) + 70 : 30;
+        const engagementScore = hasContent ? Math.floor(Math.random() * 20) + 70 : 30;
         
         // Set data with real analysis results
         setData({
           id: id || "123456",
           videoUrl: sessionData.videoUrl,
-          overallScore: hasContent ? Math.floor((verbalScore + eyeContactScore + confidenceScore) / 3) : 25,
+          overallScore: hasContent ? Math.floor((verbalScore + eyeContactScore + engagementScore) / 3) : 25,
           scores: {
             verbal: verbalScore,
             nonVerbal: eyeContactScore,
-            content: hasContent ? Math.floor(speechAnalysis.wordCount * 3) : 0,
-            engagement: confidenceScore
+            content: hasContent ? Math.min(100, speechAnalysis.wordCount * 2) : 0,
+            engagement: engagementScore
           },
           detailedScores: {
-            clarity: hasContent ? Math.floor(Math.random() * 20) + 60 : 0,
-            conciseness: hasContent ? Math.floor(Math.random() * 20) + 60 : 0,
+            clarity: hasContent ? Math.min(100, confidenceScore * 0.8) : 0,
+            conciseness: hasContent ? Math.min(100, 100 - (speechAnalysis.fillerWordCount * 10)) : 0,
             eyeContact: eyeContactScore,
             posture: Math.floor(Math.random() * 20) + 60,
-            relevance: hasContent ? Math.floor(Math.random() * 20) + 60 : 0,
+            relevance: hasContent ? Math.min(100, confidenceScore * 0.7) : 0,
             confidence: confidenceScore
           },
           summary: hasContent 
-            ? `Your interview included ${speechAnalysis.wordCount} words over ${Math.round(speechDuration)} seconds. The content was ${speechAnalysis.wordCount > 20 ? 'substantial' : 'limited'}.`
+            ? `Your interview included ${speechAnalysis.wordCount} words over ${Math.round(speechDuration)} seconds. Speech quality was rated as ${speechQuality}. ${speechAnalysis.fillerWordCount > 5 ? 'Consider reducing filler words.' : 'Good job keeping filler words to a minimum!'}`
             : "Our analysis detected minimal or no meaningful speech during your interview. This could be due to technical issues or insufficient verbal responses.",
           strengths: hasContent 
             ? [
-                speechAnalysis.wordCount > 20 ? "Clear verbal communication" : "Attempted verbal responses",
+                confidenceScore > 60 ? "Clear verbal communication" : "Attempted verbal responses",
                 "Professional appearance",
-                eyeContactScore > 75 ? "Strong eye contact" : "Acceptable eye contact"
-              ]
+                eyeContactScore > 75 ? "Strong eye contact" : "Acceptable eye contact",
+                speechAnalysis.fillerWordCount < 5 ? "Limited use of filler words" : null
+              ].filter(Boolean)
             : [
                 "You were present on camera",
                 "Your visual setup was adequate"
@@ -73,9 +88,10 @@ export const useFakeAnalysisData = (id?: string) => {
           improvements: hasContent
             ? [
                 speechAnalysis.wordCount < 30 ? "Provide more detailed responses" : "Maintain current response length",
+                speechAnalysis.fillerWordCount > 5 ? `Reduce filler words (detected ${speechAnalysis.fillerWordCount})` : null,
                 "Improve speech clarity and pace",
                 "Enhance engagement through body language"
-              ]
+              ].filter(Boolean)
             : [
                 "No meaningful speech detected for analysis",
                 "Verbal participation is essential",
@@ -90,13 +106,13 @@ export const useFakeAnalysisData = (id?: string) => {
           feedback: {
             verbal: {
               clarity: hasContent 
-                ? `Speech was ${speechAnalysis.wordCount > 20 ? 'clear and audible' : 'present but limited'}. ${speechAnalysis.transcription}`
+                ? `Speech was ${speechQuality === 'excellent' || speechQuality === 'good' ? 'clear and well-articulated' : 'somewhat unclear or monotone'}. ${speechAnalysis.transcription.substring(0, 100)}...`
                 : "Insufficient speech detected for analysis.",
               vocabulary: hasContent
-                ? `Used ${speechAnalysis.wordCount} words throughout the interview.`
+                ? `Used ${speechAnalysis.wordCount} words throughout the interview. ${speechAnalysis.wordCount < 30 ? 'Consider expanding your responses.' : 'Good vocabulary usage.'}`
                 : "No substantial verbal content to evaluate.",
               fillerWords: hasContent
-                ? "Some filler words detected, focus on more structured responses."
+                ? `Detected ${speechAnalysis.fillerWordCount} filler words. ${speechAnalysis.fillerWordCount > 5 ? 'Work on reducing these for clearer communication.' : 'Good job minimizing filler words!'}`
                 : "No speech patterns to analyze."
             },
             nonVerbal: {
@@ -116,11 +132,17 @@ export const useFakeAnalysisData = (id?: string) => {
                 : "No examples detected in the responses."
             },
             overall: {
-              confidence: `Confidence level appears ${confidenceScore > 75 ? 'strong' : 'moderate'}.`,
+              confidence: `Confidence level appears ${confidenceScore > 75 ? 'strong' : confidenceScore > 50 ? 'moderate' : 'low'}.`,
               engagement: `Engagement level was ${hasContent ? 'acceptable' : 'insufficient'}.`,
               appearance: "Professional appearance maintained throughout the interview."
             }
-          }
+          },
+          transcription: speechAnalysis.transcription,
+          wordCount: speechAnalysis.wordCount,
+          fillerWordCount: speechAnalysis.fillerWordCount,
+          speechDuration: speechDuration,
+          confidenceScore: confidenceScore,
+          speechQuality: speechQuality
         });
         
       } catch (error) {
