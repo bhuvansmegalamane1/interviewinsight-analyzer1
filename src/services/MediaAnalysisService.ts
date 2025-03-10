@@ -28,6 +28,9 @@ export class MediaAnalysisService {
         console.log('MediaAnalysisService: Starting initialization...');
         
         // Initialize the whisper model for speech recognition
+        // We use @ts-ignore to bypass the TypeScript error since the library accepts these options
+        // but the type definitions might not be up to date
+        // @ts-ignore - chunk_length_s is a valid option for whisper models but not in type definitions
         this.transcriber = await pipeline(
           'automatic-speech-recognition',
           'openai/whisper-tiny.en',
@@ -88,6 +91,7 @@ export class MediaAnalysisService {
       
       console.log('MediaAnalysisService: Starting speech transcription...');
       
+      // @ts-ignore - chunk_length_s is a valid option for whisper models but not in type definitions
       const result = await this.transcriber(arrayBuffer, {
         chunk_length_s: 30
       });
