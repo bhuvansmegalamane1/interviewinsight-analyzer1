@@ -43,11 +43,71 @@ export interface AnalysisData {
       appearance: string;
     };
   };
-  // New fields for enhanced analysis
+  // Enhanced analysis fields
   transcription?: string;
   wordCount?: number;
   fillerWordCount?: number;
   speechDuration?: number;
   confidenceScore?: number;
   speechQuality?: 'poor' | 'fair' | 'good' | 'excellent';
+  
+  // New comprehensive metrics
+  pacing?: {
+    wordsPerMinute: number;
+    pauseFrequency: number;
+    paceConsistency: number;
+    score: number;
+  };
+  vocabulary?: {
+    diversity: number;
+    complexity: number;
+    domainSpecificity: number;
+    score: number;
+  };
+  sentiment?: {
+    positivity: number;
+    enthusiasm: number;
+    confidence: number;
+    score: number;
+  };
+  structure?: {
+    organization: number;
+    coherence: number;
+    completeness: number;
+    score: number;
+  };
+  behavioral?: {
+    stressIndicators: number;
+    engagementLevel: number;
+    adaptability: number;
+    score: number;
+  };
+  technicalDepth?: {
+    knowledgeLevel: number;
+    problemSolving: number;
+    domainExpertise: number;
+    score: number;
+  };
+  privacy: {
+    dataRetentionPeriod: string;
+    anonymizationLevel: 'full' | 'partial' | 'none';
+    consentObtained: boolean;
+  };
+  feedback360?: string[];
+  trendAnalysis?: {
+    improvementAreas: string[];
+    progressMetrics: {
+      [key: string]: {
+        previous: number;
+        current: number;
+        change: number;
+      };
+    };
+  };
+  userFeedback?: {
+    relevanceRating?: number;
+    accuracyRating?: number;
+    actionabilityRating?: number;
+    comments?: string;
+  };
 }
