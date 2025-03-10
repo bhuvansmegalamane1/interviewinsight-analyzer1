@@ -12,7 +12,6 @@ export class MediaAnalysisService {
         this.transcriber = await pipeline(
           'automatic-speech-recognition',
           'openai/whisper-tiny.en'
-          // Remove the quantized option as it's not supported
         );
         this.initialized = true;
         console.log('MediaAnalysisService: Initialized successfully');
@@ -34,7 +33,10 @@ export class MediaAnalysisService {
       
       // Convert blob to array buffer for analysis
       const arrayBuffer = await audioBlob.arrayBuffer();
-      const result = await this.transcriber(arrayBuffer);
+      const result = await this.transcriber(arrayBuffer, {
+        task: 'transcribe',
+        chunk_length_s: 30
+      });
       
       const transcription = result.text.trim();
       const words = transcription.split(/\s+/).filter(word => word.length > 0);
@@ -43,10 +45,20 @@ export class MediaAnalysisService {
       // More than just filler sounds or single words
       const hasSpokenContent = words.length > 3;
       
+      // Calculate duration in seconds based on audio content
+      const speechDuration = audioBlob.size > 0 ? audioBlob.size / 16000 : 0;
+      
+      console.log('Speech Analysis Results:', {
+        transcription,
+        wordCount: words.length,
+        hasSpokenContent,
+        speechDuration
+      });
+      
       return {
         hasSpokenContent,
         transcription,
-        speechDuration: audioBlob.size > 0 ? audioBlob.size / 16000 : 0, // Rough estimation
+        speechDuration,
         wordCount: words.length
       };
     } catch (error) {
