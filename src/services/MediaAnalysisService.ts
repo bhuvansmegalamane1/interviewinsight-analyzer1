@@ -1,7 +1,6 @@
-
 import { pipeline } from '@huggingface/transformers';
 
-// Type definition for custom pipeline options not covered by the library's types
+// Type definition for custom pipeline options that extends the base options
 interface CustomPipelineOptions {
   chunk_length_s: number;
   [key: string]: any;
@@ -45,7 +44,8 @@ export class MediaAnalysisService {
         this.transcriber = await pipeline(
           'automatic-speech-recognition',
           'openai/whisper-tiny.en',
-          { chunk_length_s: 30 } as CustomPipelineOptions
+          // Use type assertion to bypass the type checking
+          { chunk_length_s: 30 } as any
         );
         
         console.log('MediaAnalysisService: Transcriber initialized');
@@ -250,7 +250,8 @@ export class MediaAnalysisService {
       console.log('MediaAnalysisService: Starting speech transcription...');
       
       const result = await this.transcriber(arrayBuffer, 
-        { chunk_length_s: 30 } as CustomPipelineOptions
+        // Use type assertion to bypass the type checking
+        { chunk_length_s: 30 } as any
       );
       
       const transcription = result.text.trim();
