@@ -11,8 +11,8 @@ export class MediaAnalysisService {
         // Initialize the whisper model for speech recognition
         this.transcriber = await pipeline(
           'automatic-speech-recognition',
-          'openai/whisper-tiny.en',
-          { quantized: true }
+          'openai/whisper-tiny.en'
+          // Remove the quantized option as it's not supported
         );
         this.initialized = true;
         console.log('MediaAnalysisService: Initialized successfully');
