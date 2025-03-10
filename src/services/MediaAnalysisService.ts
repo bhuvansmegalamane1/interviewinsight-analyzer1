@@ -32,7 +32,6 @@ export class MediaAnalysisService {
           'automatic-speech-recognition',
           'openai/whisper-tiny.en',
           { 
-            task: 'transcribe',
             chunk_length_s: 30
           }
         );
@@ -90,7 +89,6 @@ export class MediaAnalysisService {
       console.log('MediaAnalysisService: Starting speech transcription...');
       
       const result = await this.transcriber(arrayBuffer, {
-        task: 'transcribe',
         chunk_length_s: 30
       });
       
